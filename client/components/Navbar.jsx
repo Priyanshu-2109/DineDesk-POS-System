@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import LoginPopup from "./LoginPopup";
+import { useApp } from "../context/AppContext";
 
 const Navbar = () => {
   const [active, setActive] = useState("home");
   const [scrolled, setScrolled] = useState(false);
-  const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(false);
+  const { user, openAuthModal, closeAuthModal, authModal, logout } = useApp();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,83 +18,145 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const handleLogin = () => {
+    openAuthModal("login");
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  // Hide navbar on dashboard pages
+  if (location.pathname.startsWith("/dashboard")) {
+    return null;
+  }
+
   return (
     <>
       <nav
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
           scrolled
-            ? "bg-[#461a00]/40 backdrop-blur-2xl shadow-md"
+            ? "bg-[#3b1a0b]/10 backdrop-blur-xl shadow-lg border-b border-white/20"
             : "bg-transparent"
-        } text-[#3b1a0b] h-16 flex items-center justify-between px-6`}
+        } h-20 flex items-center justify-between px-6`}
       >
         {/* Logo */}
-        <Link to="/" className="text-2xl font-bold text-[#3b1a0b]">
+        <Link
+          to="/"
+          className={`text-2xl font-bold transition-colors ${
+            scrolled
+              ? "text-[#3b1a0b] hover:text-[#cc6600]"
+              : "text-[#3b1a0b] hover:text-[#cc6600] drop-shadow-lg"
+          }`}
+        >
           DineDesk
         </Link>
 
         {/* Menu Links */}
-        <div className="hidden md:flex gap-6 text-sm">
+        <div className="hidden md:flex gap-8 text-sm font-medium">
           <Link
             to="/"
             onClick={() => setActive("home")}
-            className={`hover:text-[#3b1a0b] ${
+            className={`hover:text-[#cc6600] transition-colors duration-200 py-2 ${
               active === "home"
-                ? "text-[#3b1a0b] border-b-2 border-[#3b1a0b]"
-                : "text-gray-200"
+                ? "text-[#cc6600] border-b-2 border-[#cc6600]"
+                : scrolled
+                ? "text-[#3b1a0b]"
+                : "text-gray-500 drop-shadow-lg"
             }`}
           >
             Home
           </Link>
           <Link
-            to="/tables"
-            onClick={() => setActive("tables")}
-            className={`hover:text-[#3b1a0b] ${
-              active === "tables"
-                ? "text-[#3b1a0b] border-b-2 border-[#3b1a0b]"
-                : "text-gray-400"
+            to="/pricing"
+            onClick={() => setActive("pricing")}
+            className={`hover:text-[#cc6600] transition-colors duration-200 py-2 ${
+              active === "pricing"
+                ? "text-[#cc6600] border-b-2 border-[#cc6600]"
+                : scrolled
+                ? "text-[#3b1a0b]"
+                : "text-gray-500 drop-shadow-lg"
             }`}
           >
-            Tables
+            Pricing
           </Link>
           <Link
-            to="/orders"
-            onClick={() => setActive("orders")}
-            className={`hover:text-[#3b1a0b] ${
-              active === "orders"
-                ? "text-[#3b1a0b] border-b-2 border-[#3b1a0b]"
-                : "text-gray-400"
+            to="/about"
+            onClick={() => setActive("about")}
+            className={`hover:text-[#cc6600] transition-colors duration-200 py-2 ${
+              active === "about"
+                ? "text-[#cc6600] border-b-2 border-[#cc6600]"
+                : scrolled
+                ? "text-[#3b1a0b]"
+                : "text-gray-500 drop-shadow-lg"
             }`}
           >
-            Orders
+            About Us
           </Link>
           <Link
-            to="/menu"
-            onClick={() => setActive("menu")}
-            className={`hover:text-[#3b1a0b] ${
-              active === "menu"
-                ? "text-[#3b1a0b] border-b-2 border-[#3b1a0b]"
-                : "text-gray-400"
+            to="/setup"
+            onClick={() => setActive("setup")}
+            className={`hover:text-[#cc6600] transition-colors duration-200 py-2 ${
+              active === "setup"
+                ? "text-[#cc6600] border-b-2 border-[#cc6600]"
+                : scrolled
+                ? "text-[#3b1a0b]"
+                : "text-gray-500 drop-shadow-lg"
             }`}
           >
-            Menu
+            Setup
           </Link>
         </div>
 
-        {/* Right-side Login button */}
-        <div>
-          <button
-            className="bg-transparent border border-[#3b1a0b] px-4 py-1 rounded hover:bg-[#3b1a0b] hover:text-white text-sm transition-all duration-200 text-[#3b1a0b]"
-            onClick={() => setIsLoginPopupOpen(true)}
-          >
-            Login
-          </button>
+        {/* Auth Section */}
+        <div className="flex items-center gap-4">
+          {user ? (
+            <div className="flex items-center gap-4">
+              <Link
+                to="/dashboard"
+                className="px-4 py-2 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-colors font-medium"
+              >
+                Dashboard
+              </Link>
+              <button
+                onClick={handleLogout}
+                className={`px-4 py-2 transition-colors font-medium ${
+                  scrolled
+                    ? "text-[#3b1a0b] hover:text-[#cc6600]"
+                    : "text-[#3b1a0b] hover:text-[#cc6600] drop-shadow-lg"
+                }`}
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleLogin}
+                className={`px-4 py-2 transition-colors font-medium ${
+                  scrolled
+                    ? "text-[#3b1a0b] hover:text-[#cc6600]"
+                    : "text-[#3b1a0b]  hover:text-[#cc6600] drop-shadow-lg"
+                }`}
+              >
+                Login
+              </button>
+              <button
+                onClick={() => openAuthModal("signup")}
+                className="px-6 py-2 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-colors font-medium shadow-lg"
+              >
+                Get Started
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
-      {/* Login Popup */}
       <LoginPopup
-        isOpen={isLoginPopupOpen}
-        onClose={() => setIsLoginPopupOpen(false)}
+        isOpen={authModal.isOpen}
+        initialMode={authModal.mode}
+        onClose={closeAuthModal}
       />
     </>
   );
