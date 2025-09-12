@@ -1,1 +1,44 @@
 @import "tailwindcss";
+
+/* Smooth scrolling for the entire application */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Enhanced smooth scrolling for better user experience */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Ensure body has no default margins that might affect scroll behavior */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Page transition animations */
+.page-transition {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth transitions for all interactive elements */
+.smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced hover effects */
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
