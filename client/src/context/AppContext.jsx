@@ -124,11 +124,7 @@ export const AppProvider = ({ children }) => {
 
   const markOrderComplete = (orderId) => {
     setOrders((prev) =>
-      prev.map((o) =>
-        o.id === orderId
-          ? { ...o, status: "complete", completedAt: new Date().toISOString() }
-          : o
-      )
+      prev.map((o) => (o.id === orderId ? { ...o, status: "complete" } : o))
     );
     // free the table
     setTables((prev) =>
@@ -140,32 +136,52 @@ export const AppProvider = ({ children }) => {
     );
   };
 
-  // Additional helper functions for better order management
-  const updateItemQuantityInOrder = (orderId, itemId, newQty) => {
+  const checkoutTable = (tableId) => {
+    const table = tables.find((t) => t.id === tableId);
+    if (table && table.currentOrderId) {
+      markOrderComplete(table.currentOrderId);
+    }
+  };
+
+  const updateItemQuantity = (orderId, itemId, change) => {
     setOrders((prev) =>
-      prev.map((o) =>
-        o.id === orderId
-          ? {
-              ...o,
-              items: o.items.map((item) =>
-                item.id === itemId ? { ...item, qty: newQty } : item
-              ),
-            }
-          : o
-      )
+      prev.map((o) => {
+        if (o.id === orderId) {
+          return {
+            ...o,
+            items: o.items
+              .map((item) => {
+                if (item.id === itemId) {
+                  const newQty = item.qty + change;
+                  return newQty > 0 ? { ...item, qty: newQty } : null;
+                }
+                return item;
+              })
+              .filter(Boolean),
+          };
+        }
+        return o;
+      })
     );
   };
 
   const removeItemFromOrder = (orderId, itemId) => {
     setOrders((prev) =>
-      prev.map((o) =>
-        o.id === orderId
-          ? {
-              ...o,
-              items: o.items.filter((item) => item.id !== itemId),
-            }
-          : o
-      )
+      prev.map((o) => {
+        if (o.id === orderId) {
+          return {
+            ...o,
+            items: o.items.filter((item) => item.id !== itemId),
+          };
+        }
+        return o;
+      })
+    );
+  };
+
+  const getTableOrders = (tableId) => {
+    return orders.filter(
+      (order) => order.tableId === tableId && order.status === "open"
     );
   };
 
@@ -178,15 +194,12 @@ export const AppProvider = ({ children }) => {
     );
   };
 
-  const getTableOrders = () => {
-    return tables
-      .filter((table) => table.status === "occupied")
-      .map((table) => {
-        const order = orders.find(
-          (o) => o.tableId === table.id && o.status === "open"
-        );
-        return { table, order };
-      });
+  const getTableTotal = (tableId) => {
+    const tableOrders = getTableOrders(tableId);
+    return tableOrders.reduce(
+      (total, order) => total + getOrderTotal(order.id),
+      0
+    );
   };
 
   const value = useMemo(
@@ -212,10 +225,12 @@ export const AppProvider = ({ children }) => {
       createOrder,
       addItemToOrder,
       markOrderComplete,
-      updateItemQuantityInOrder,
+      checkoutTable,
+      updateItemQuantity,
       removeItemFromOrder,
-      getOrderTotal,
       getTableOrders,
+      getOrderTotal,
+      getTableTotal,
     }),
     [user, authModal, restaurant, tables, menu, orders]
   );

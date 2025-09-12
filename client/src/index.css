@@ -1,44 +1,63 @@
 @import "tailwindcss";
 
-/* Smooth scrolling for the entire application */
+/* Global smooth scrolling behavior */
 html {
   scroll-behavior: smooth;
 }
 
-/* Enhanced smooth scrolling for better user experience */
+/* Smooth page transitions */
 * {
-  scroll-behavior: smooth;
+  transition: opacity 0.3s ease-in-out;
 }
 
-/* Ensure body has no default margins that might affect scroll behavior */
+/* Page fade-in animation */
 body {
-  margin: 0;
-  padding: 0;
+  animation: fadeIn 0.5s ease-in-out;
 }
 
-/* Page transition animations */
-.page-transition {
-  animation: fadeInUp 0.6s ease-out forwards;
-}
-
-@keyframes fadeInUp {
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(30px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-/* Smooth transitions for all interactive elements */
-.smooth-transition {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Custom scrollbar styling for better UX */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-/* Enhanced hover effects */
-.hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cc6600;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b35500;
+}
+
+/* Smooth transitions for all interactive elements */
+button,
+a,
+input,
+select,
+textarea {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Enhanced focus states for accessibility */
+button:focus,
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid #cc6600;
+  outline-offset: 2px;
 }

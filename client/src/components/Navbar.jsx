@@ -18,16 +18,6 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Update active state based on current route
-  useEffect(() => {
-    const path = location.pathname;
-    if (path === "/") setActive("home");
-    else if (path === "/pricing") setActive("pricing");
-    else if (path === "/about") setActive("about");
-    else if (path === "/setup") setActive("setup");
-    else if (path === "/tables") setActive("tables");
-  }, [location.pathname]);
-
   const handleLogin = () => {
     openAuthModal("login");
   };
@@ -35,15 +25,6 @@ const Navbar = () => {
   const handleLogout = () => {
     logout();
     navigate("/");
-  };
-
-  // Enhanced navigation handler with smooth scrolling
-  const handleNavigation = (path, activeState) => {
-    setActive(activeState);
-    // Add a small delay to ensure smooth transition
-    setTimeout(() => {
-      navigate(path);
-    }, 50);
   };
 
   // Hide navbar on dashboard pages
@@ -76,11 +57,8 @@ const Navbar = () => {
         <div className="hidden md:flex gap-8 text-sm font-medium">
           <Link
             to="/"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavigation("/", "home");
-            }}
-            className={`hover:text-[#cc6600] transition-all duration-300 py-2 transform hover:scale-105 ${
+            onClick={() => setActive("home")}
+            className={`hover:text-[#cc6600] transition-colors duration-200 py-2 ${
               active === "home"
                 ? "text-[#cc6600] border-b-2 border-[#cc6600]"
                 : scrolled
@@ -92,11 +70,8 @@ const Navbar = () => {
           </Link>
           <Link
             to="/pricing"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavigation("/pricing", "pricing");
-            }}
-            className={`hover:text-[#cc6600] transition-all duration-300 py-2 transform hover:scale-105 ${
+            onClick={() => setActive("pricing")}
+            className={`hover:text-[#cc6600] transition-colors duration-200 py-2 ${
               active === "pricing"
                 ? "text-[#cc6600] border-b-2 border-[#cc6600]"
                 : scrolled
@@ -108,11 +83,8 @@ const Navbar = () => {
           </Link>
           <Link
             to="/about"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavigation("/about", "about");
-            }}
-            className={`hover:text-[#cc6600] transition-all duration-300 py-2 transform hover:scale-105 ${
+            onClick={() => setActive("about")}
+            className={`hover:text-[#cc6600] transition-colors duration-200 py-2 ${
               active === "about"
                 ? "text-[#cc6600] border-b-2 border-[#cc6600]"
                 : scrolled
@@ -124,11 +96,8 @@ const Navbar = () => {
           </Link>
           <Link
             to="/setup"
-            onClick={(e) => {
-              e.preventDefault();
-              handleNavigation("/setup", "setup");
-            }}
-            className={`hover:text-[#cc6600] transition-all duration-300 py-2 transform hover:scale-105 ${
+            onClick={() => setActive("setup")}
+            className={`hover:text-[#cc6600] transition-colors duration-200 py-2 ${
               active === "setup"
                 ? "text-[#cc6600] border-b-2 border-[#cc6600]"
                 : scrolled
@@ -146,17 +115,13 @@ const Navbar = () => {
             <div className="flex items-center gap-4">
               <Link
                 to="/dashboard"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleNavigation("/dashboard", "dashboard");
-                }}
-                className="px-4 py-2 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-all duration-300 font-medium transform hover:scale-105 shadow-lg hover:shadow-xl"
+                className="px-4 py-2 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-colors font-medium"
               >
                 Dashboard
               </Link>
               <button
                 onClick={handleLogout}
-                className={`px-4 py-2 transition-all duration-300 font-medium transform hover:scale-105 ${
+                className={`px-4 py-2 transition-colors font-medium ${
                   scrolled
                     ? "text-[#3b1a0b] hover:text-[#cc6600]"
                     : "text-[#3b1a0b] hover:text-[#cc6600] drop-shadow-lg"
@@ -169,7 +134,7 @@ const Navbar = () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleLogin}
-                className={`px-4 py-2 transition-all duration-300 font-medium transform hover:scale-105 ${
+                className={`px-4 py-2 transition-colors font-medium ${
                   scrolled
                     ? "text-[#3b1a0b] hover:text-[#cc6600]"
                     : "text-[#3b1a0b]  hover:text-[#cc6600] drop-shadow-lg"
@@ -179,7 +144,7 @@ const Navbar = () => {
               </button>
               <button
                 onClick={() => openAuthModal("signup")}
-                className="px-6 py-2 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="px-6 py-2 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-colors font-medium shadow-lg"
               >
                 Get Started
               </button>
