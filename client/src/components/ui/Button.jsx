@@ -23,6 +23,7 @@ const Button = ({
     ghost:
       "bg-transparent text-[#461a00] hover:bg-orange-50 focus:ring-[#461a00]",
     danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-600",
+    destructive: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-600",
   };
 
   const sizes = {

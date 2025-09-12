@@ -12,7 +12,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
-
+ 
 const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button, Card, Input } from "../components/ui";
 import { useApp } from "../context/AppContext";
-
+ 
 const Tables = () => {
   const { tables, updateTable } = useApp();
   const [searchTerm, setSearchTerm] = useState("");
