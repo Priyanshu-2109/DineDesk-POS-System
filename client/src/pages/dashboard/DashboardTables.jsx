@@ -14,11 +14,37 @@ const DashboardTables = () => {
     number: "",
     capacity: 4,
   });
+  const [errors, setErrors] = useState({});
+
+  const validateTableData = () => {
+    const newErrors = {};
+
+    if (!newTableData.number.trim()) {
+      newErrors.number = "Table number/name is required";
+    } else if (
+      tables.some(
+        (table) =>
+          table.name.toLowerCase() === newTableData.number.toLowerCase()
+      )
+    ) {
+      newErrors.number = "Table with this name already exists";
+    }
+
+    if (!newTableData.capacity || newTableData.capacity < 1) {
+      newErrors.capacity = "Capacity must be at least 1 seat";
+    } else if (newTableData.capacity > 20) {
+      newErrors.capacity = "Capacity cannot exceed 20 seats";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleAddTable = () => {
-    if (newTableData.number) {
+    if (validateTableData()) {
       addTable(newTableData.number, parseInt(newTableData.capacity));
       setNewTableData({ number: "", capacity: 4 });
+      setErrors({});
       setShowAddModal(false);
     }
   };
@@ -58,50 +84,36 @@ const DashboardTables = () => {
         {tables.map((table) => (
           <div
             key={table.id}
-            className={`p-6 rounded-xl border-2 transition-all ${
-              table.status === "available"
-                ? "bg-green-50 border-green-200 hover:border-green-300"
-                : "bg-red-50 border-red-200 hover:border-red-300"
-            }`}
+            className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
           >
-            <div className="text-center">
-              <h3 className="text-lg font-bold text-[#3b1a0b]">{table.name}</h3>
-              <div className="flex items-center justify-center gap-1 text-sm text-gray-600 mb-3">
-                <Users className="h-4 w-4" />
-                <span>{table.seats} seats</span>
-              </div>
-
-              <div
-                className={`mb-4 px-3 py-1 rounded-full text-xs font-medium ${
-                  table.status === "available"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
-                }`}
-              >
-                {table.status === "available" ? "Available" : "Occupied"}
-              </div>
-
-              <div className="space-y-2">
-                <button
-                  onClick={() => toggleTableStatus(table.id)}
-                  className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                    table.status === "available"
-                      ? "bg-[#cc6600] text-white hover:bg-[#b35500]"
-                      : "bg-green-600 text-white hover:bg-green-700"
-                  }`}
-                >
-                  {table.status === "available" ? "Use Table" : "Free Table"}
-                </button>
-
-                <button
-                  onClick={() => openDeleteModal(table)}
-                  className="w-full py-2 px-3 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Remove
-                </button>
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {table.name}
+              </h3>
+              <Users className="h-5 w-5 text-gray-600" />
             </div>
+
+            <div className="text-sm text-gray-600 mb-3">
+              <span>{table.seats} seats</span>
+            </div>
+
+            <div
+              className={`mb-3 px-2 py-1 rounded text-sm font-medium ${
+                table.status === "available"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {table.status === "available" ? "Available" : "Occupied"}
+            </div>
+
+            <button
+              onClick={() => openDeleteModal(table)}
+              className="w-full py-2 px-3 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </button>
           </div>
         ))}
       </div>
@@ -109,7 +121,11 @@ const DashboardTables = () => {
       {/* Add Table Modal */}
       <Modal
         isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={() => {
+          setShowAddModal(false);
+          setErrors({});
+          setNewTableData({ number: "", capacity: 4 });
+        }}
         title="Add New Table"
         size="sm"
       >
@@ -121,12 +137,25 @@ const DashboardTables = () => {
             <Input
               type="text"
               value={newTableData.number}
-              onChange={(e) =>
-                setNewTableData({ ...newTableData, number: e.target.value })
-              }
+              onChange={(e) => {
+                setNewTableData({ ...newTableData, number: e.target.value });
+                if (errors.number) {
+                  setErrors({ ...errors, number: "" });
+                }
+              }}
               placeholder="e.g., 1, A1, VIP-1"
-              className="w-full"
+              className={`w-full ${
+                errors.number
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                  : ""
+              }`}
             />
+            {errors.number && (
+              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                <span className="text-red-500">•</span>
+                {errors.number}
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -135,22 +164,40 @@ const DashboardTables = () => {
             <Input
               type="number"
               value={newTableData.capacity}
-              onChange={(e) =>
-                setNewTableData({ ...newTableData, capacity: e.target.value })
-              }
+              onChange={(e) => {
+                setNewTableData({ ...newTableData, capacity: e.target.value });
+                if (errors.capacity) {
+                  setErrors({ ...errors, capacity: "" });
+                }
+              }}
               min="1"
               max="20"
-              className="w-full"
+              className={`w-full ${
+                errors.capacity
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                  : ""
+              }`}
             />
+            {errors.capacity && (
+              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                <span className="text-red-500">•</span>
+                {errors.capacity}
+              </p>
+            )}
           </div>
         </div>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowAddModal(false);
+              setErrors({});
+              setNewTableData({ number: "", capacity: 4 });
+            }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleAddTable} disabled={!newTableData.number}>
-            Add Table
-          </Button>
+          <Button onClick={handleAddTable}>Add Table</Button>
         </Modal.Footer>
       </Modal>
 

@@ -4,10 +4,12 @@ import {
   X,
   Search,
   Minus,
+  ChevronDown,
+  ChevronRight,
+  ShoppingCart,
+  AlertTriangle,
   Eye,
   CreditCard,
-  Users,
-  Clock,
 } from "lucide-react";
 import { useApp } from "../../context/AppContext";
 import Modal from "../../components/ui/Modal";
@@ -20,47 +22,107 @@ const DashboardOrders = () => {
     orders,
     createOrder,
     addItemToOrder,
-    markOrderComplete,
+    updateItemQuantity,
+    removeItemFromOrder,
+    checkoutTable,
+    getTableOrders,
+    getOrderTotal,
+    getTableTotal,
   } = useApp();
-  const [showCreateOrder, setShowCreateOrder] = useState(false);
-  const [showOrderDetails, setShowOrderDetails] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState(null);
+
+  const [showAddOrder, setShowAddOrder] = useState(false);
+  const [showViewOrder, setShowViewOrder] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
   const [selectedTable, setSelectedTable] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [expandedTables, setExpandedTables] = useState({});
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [sendBill, setSendBill] = useState(false);
 
-  // Get only occupied tables with their orders
-  const occupiedTables = tables.filter((table) => table.status === "occupied");
-  const tableOrders = occupiedTables.map((table) => {
-    const tableOrder = orders.find(
-      (order) => order.tableId === table.id && order.status === "open"
-    );
-    return {
-      table,
-      order: tableOrder,
-    };
-  });
+  // Get only occupied tables with orders
+  const occupiedTablesWithOrders = tables.filter(
+    (table) => table.status === "occupied" && table.currentOrderId
+  );
 
-  const createNewOrder = () => {
+  const handleTableClick = (tableId, action = "add") => {
+    const table = tables.find((t) => t.id === tableId);
+
+    if (action === "view") {
+      setSelectedTable(tableId);
+      setShowViewOrder(true);
+      return;
+    }
+
+    if (action === "checkout") {
+      setSelectedTable(tableId);
+      setShowCheckout(true);
+      setCustomerEmail("");
+      setSendBill(false);
+      return;
+    }
+
+    // Default 'add' action
+    setSelectedTable(tableId);
+    setShowAddOrder(true);
+    setSelectedItems([]);
+    setSearchTerm("");
+
+    if (table.status === "occupied" && table.currentOrderId) {
+      setWarningMessage(
+        `Table ${table.name} already has an active order. Adding items will be added to the existing order.`
+      );
+      setShowWarning(true);
+    } else {
+      setShowWarning(false);
+    }
+  };
+
+  const handleTableSelect = (tableId) => {
+    const table = tables.find((t) => t.id === tableId);
+    if (table.status === "occupied" && table.currentOrderId) {
+      setWarningMessage(
+        `Table ${table.name} already has an active order. Adding items will be added to the existing order.`
+      );
+      setShowWarning(true);
+      setSelectedTable(tableId);
+    } else {
+      setSelectedTable(tableId);
+      setShowWarning(false);
+    }
+  };
+
+  const proceedWithOrder = () => {
+    setShowWarning(false);
+  };
+
+  const addOrder = () => {
     if (selectedTable && selectedItems.length > 0) {
-      const orderId = createOrder(parseInt(selectedTable));
+      const table = tables.find((t) => t.id === selectedTable);
+      let orderId;
 
-      // Add all selected items to the order
+      if (table.currentOrderId) {
+        orderId = table.currentOrderId;
+      } else {
+        orderId = createOrder(selectedTable);
+      }
+
       selectedItems.forEach((item) => {
         for (let i = 0; i < item.qty; i++) {
           addItemToOrder(orderId, item.id);
         }
       });
 
-      // Reset form
-      setShowCreateOrder(false);
+      setShowAddOrder(false);
       setSelectedTable("");
       setSelectedItems([]);
       setSearchTerm("");
     }
   };
 
-  const addItemToSelection = (menuItem) => {
+  const addItemToSelectedItems = (menuItem) => {
     const existingItem = selectedItems.find((item) => item.id === menuItem.id);
     if (existingItem) {
       setSelectedItems(
@@ -74,7 +136,7 @@ const DashboardOrders = () => {
     setSearchTerm("");
   };
 
-  const updateItemQuantity = (itemId, change) => {
+  const updateSelectedItemQuantity = (itemId, change) => {
     setSelectedItems(
       selectedItems
         .map((item) => {
@@ -88,7 +150,7 @@ const DashboardOrders = () => {
     );
   };
 
-  const removeItemFromSelection = (itemId) => {
+  const removeSelectedItem = (itemId) => {
     setSelectedItems(selectedItems.filter((item) => item.id !== itemId));
   };
 
@@ -103,562 +165,789 @@ const DashboardOrders = () => {
     0
   );
 
-  const availableTables = tables.filter(
-    (table) => table.status === "available"
-  );
-
-  const viewOrderDetails = (orderId) => {
-    setSelectedOrderId(orderId);
-    setShowOrderDetails(true);
+  const toggleTableExpansion = (tableId) => {
+    setExpandedTables((prev) => ({
+      ...prev,
+      [tableId]: !prev[tableId],
+    }));
   };
 
-  const handleCheckout = (orderId) => {
-    markOrderComplete(orderId);
-    setShowOrderDetails(false);
-    setSelectedOrderId(null);
+  const handleCheckout = (tableId) => {
+    checkoutTable(tableId);
   };
 
-  const selectedOrder = orders.find((order) => order.id === selectedOrderId);
-  const selectedOrderTable = tables.find(
-    (table) => table.currentOrderId === selectedOrderId
-  );
+  const confirmCheckout = () => {
+    if (sendBill && customerEmail && !isValidEmail(customerEmail)) {
+      alert("Please enter a valid email address to send the bill.");
+      return;
+    }
 
-  const calculateOrderTotal = (order) => {
-    return (
-      order?.items?.reduce((total, item) => total + item.price * item.qty, 0) ||
-      0
-    );
+    const table = tables.find((t) => t.id === selectedTable);
+
+    // Here you can add logic to send email bill if needed
+    if (sendBill && customerEmail) {
+      console.log(`Sending bill to: ${customerEmail} for Table ${table?.name}`);
+      // Add your email sending logic here
+    }
+
+    checkoutTable(selectedTable);
+    setShowCheckout(false);
+    setSelectedTable("");
+    setCustomerEmail("");
+    setSendBill(false);
+  };
+
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-[#3b1a0b]">Orders Management</h2>
-        <button
-          onClick={() => setShowCreateOrder(true)}
-          className="bg-[#cc6600] text-white px-4 py-2 rounded-lg hover:bg-[#b35500] flex items-center gap-2 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Create New Order
-        </button>
+        <h2 className="text-2xl font-bold text-[#3b1a0b]">Orders</h2>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-[#cc6600] bg-opacity-10 rounded-lg flex items-center justify-center">
-              <Users className="h-6 w-6 text-[#cc6600]" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Occupied Tables</p>
-              <p className="text-2xl font-bold text-[#3b1a0b]">
-                {occupiedTables.length}
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* All Tables Grid */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-[#3b1a0b]">All Tables</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {tables.map((table) => {
+            const tableOrders = getTableOrders(table.id);
+            const tableTotal = getTableTotal(table.id);
+            const isOccupied = table.status === "occupied";
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <Clock className="h-6 w-6 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Active Orders</p>
-              <p className="text-2xl font-bold text-[#3b1a0b]">
-                {orders.filter((o) => o.status === "open").length}
-              </p>
-            </div>
-          </div>
-        </div>
+            return (
+              <div
+                key={table.id}
+                onClick={() => {
+                  if (isOccupied) {
+                    handleTableClick(table.id, "add");
+                  } else {
+                    handleTableClick(table.id, "add");
+                  }
+                }}
+                className={`p-4 rounded-lg border-2 transition-all hover:shadow-lg cursor-pointer ${
+                  isOccupied
+                    ? "bg-red-50 border-red-200 hover:border-red-300"
+                    : "bg-green-50 border-green-200 hover:border-green-300"
+                }`}
+              >
+                <div className="text-center">
+                  <div className="relative mb-2">
+                    <h3 className="text-base font-bold text-[#3b1a0b]">
+                      {table.name}
+                    </h3>
+                    {isOccupied && (
+                      <div className="absolute -top-1 -right-1">
+                        <div className="bg-red-500 text-white rounded-full p-1">
+                          <ShoppingCart className="h-3 w-3" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <CreditCard className="h-6 w-6 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Total Revenue Today</p>
-              <p className="text-2xl font-bold text-[#3b1a0b]">
-                ₹
-                {orders
-                  .filter((o) => o.status === "complete")
-                  .reduce(
-                    (total, order) => total + calculateOrderTotal(order),
-                    0
-                  )}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+                  <div className="text-sm text-gray-600 mb-3">
+                    {table.seats} seats
+                  </div>
 
-      {/* Active Orders Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-6 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-[#3b1a0b]">
-            Active Table Orders
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Click on any table to view detailed order information
-          </p>
-        </div>
-
-        {tableOrders.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left p-4 font-semibold text-[#3b1a0b]">
-                    Table
-                  </th>
-                  <th className="text-left p-4 font-semibold text-[#3b1a0b]">
-                    Order ID
-                  </th>
-                  <th className="text-left p-4 font-semibold text-[#3b1a0b]">
-                    Items Count
-                  </th>
-                  <th className="text-left p-4 font-semibold text-[#3b1a0b]">
-                    Total Amount
-                  </th>
-                  <th className="text-left p-4 font-semibold text-[#3b1a0b]">
-                    Time
-                  </th>
-                  <th className="text-left p-4 font-semibold text-[#3b1a0b]">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableOrders.map(({ table, order }) => (
-                  <tr
-                    key={table.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                    onClick={() => order && viewOrderDetails(order.id)}
+                  <div
+                    className={`mb-3 px-3 py-1 rounded-full text-sm font-medium ${
+                      isOccupied
+                        ? "bg-red-100 text-red-800"
+                        : "bg-green-100 text-green-800"
+                    }`}
                   >
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#cc6600] bg-opacity-10 rounded-lg flex items-center justify-center">
-                          <span className="font-medium text-[#cc6600]">
-                            {table.name}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-[#3b1a0b]">
-                            {table.name}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {table.seats} seats
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4 font-mono text-sm text-gray-600">
-                      {order ? order.id.slice(-8) : "No Order"}
-                    </td>
-                    <td className="p-4 text-gray-600">
-                      {order ? order.items.length : 0} items
-                    </td>
-                    <td className="p-4 font-medium text-[#3b1a0b]">
-                      ₹{order ? calculateOrderTotal(order) : 0}
-                    </td>
-                    <td className="p-4 text-gray-600">
-                      {order
-                        ? new Date(order.createdAt).toLocaleTimeString()
-                        : "-"}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex gap-2">
-                        {order && (
-                          <>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                viewOrderDetails(order.id);
-                              }}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="View Details"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCheckout(order.id);
-                              }}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                              title="Checkout"
-                            >
-                              <CreditCard className="h-4 w-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="p-12 text-center">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No Active Orders
+                    {isOccupied ? "Occupied" : "Available"}
+                  </div>
+
+                  {/* Action Buttons */}
+                  {isOccupied && (
+                    <div className="flex justify-center gap-3 mt-4">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTableClick(table.id, "view");
+                        }}
+                        title="View Order Details"
+                        className="w-12 h-12 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
+                      >
+                        <Eye className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTableClick(table.id, "checkout");
+                        }}
+                        title="Checkout"
+                        className="w-12 h-12 bg-green-600 text-white rounded-full hover:bg-green-700 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
+                      >
+                        <CreditCard className="h-5 w-5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Active Orders Section - Only show if there are occupied tables */}
+        {occupiedTablesWithOrders.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-[#3b1a0b] mb-4">
+              Active Orders Details
             </h3>
-            <p className="text-gray-500 mb-4">
-              All tables are currently available. Create a new order to get
-              started.
-            </p>
-            <button
-              onClick={() => setShowCreateOrder(true)}
-              className="bg-[#cc6600] text-white px-4 py-2 rounded-lg hover:bg-[#b35500] transition-colors"
-            >
-              Create First Order
-            </button>
+            <div className="space-y-4">
+              {occupiedTablesWithOrders.map((table) => {
+                const tableOrders = getTableOrders(table.id);
+                const tableTotal = getTableTotal(table.id);
+                const isExpanded = expandedTables[table.id];
+
+                return (
+                  <div
+                    key={table.id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-100"
+                  >
+                    <div className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <button
+                            onClick={() => toggleTableExpansion(table.id)}
+                            className="flex items-center gap-2 text-left"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <ChevronRight className="h-5 w-5 text-gray-400" />
+                            )}
+                            <div>
+                              <h3 className="text-lg font-semibold text-[#3b1a0b]">
+                                {table.name}
+                              </h3>
+                              <p className="text-sm text-gray-500">
+                                {table.seats} seats •{" "}
+                                {tableOrders.reduce(
+                                  (total, order) => total + order.items.length,
+                                  0
+                                )}{" "}
+                                item
+                                {tableOrders.reduce(
+                                  (total, order) => total + order.items.length,
+                                  0
+                                ) !== 1
+                                  ? "s"
+                                  : ""}
+                              </p>
+                            </div>
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="text-xl font-bold text-[#cc6600]">
+                              ₹{tableTotal}
+                            </div>
+                            <div className="text-sm text-gray-500">Total</div>
+                          </div>
+                          <Button
+                            onClick={() => handleCheckout(table.id)}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            Checkout
+                          </Button>
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <div className="space-y-4">
+                            {tableOrders.map((order) => (
+                              <div
+                                key={order.id}
+                                className="bg-gray-50 rounded-lg p-4"
+                              >
+                                <div className="flex items-center justify-between mb-3">
+                                  <h4 className="font-medium text-gray-900">
+                                    Order #{order.id.slice(-6)}
+                                  </h4>
+                                  <div className="text-sm text-gray-500">
+                                    {new Date(
+                                      order.createdAt
+                                    ).toLocaleTimeString()}
+                                  </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                  {order.items.map((item) => (
+                                    <div
+                                      key={item.id}
+                                      className="flex items-center justify-between py-2 px-3 bg-white rounded-md border border-gray-100"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <span className="font-medium text-gray-900">
+                                          {item.name}
+                                        </span>
+                                        <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                          Qty: {item.qty}
+                                        </span>
+                                      </div>
+                                      <div className="text-right">
+                                        <span className="font-medium text-[#cc6600]">
+                                          ₹{item.price * item.qty}
+                                        </span>
+                                        <div className="text-xs text-gray-500">
+                                          ₹{item.price} each
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between items-center">
+                                  <span className="font-medium text-gray-900">
+                                    Order Total:
+                                  </span>
+                                  <span className="font-bold text-[#cc6600]">
+                                    ₹{getOrderTotal(order.id)}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Enhanced Create Order Modal */}
+      {/* Warning Modal */}
       <Modal
-        isOpen={showCreateOrder}
+        isOpen={showWarning}
+        onClose={() => setShowWarning(false)}
+        title="Table Already Occupied"
+        size="md"
+      >
+        <div className="flex items-start gap-3 mb-4">
+          <AlertTriangle className="h-6 w-6 text-yellow-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-gray-700">{warningMessage}</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Do you want to proceed and add items to the existing order?
+            </p>
+          </div>
+        </div>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowWarning(false)}>
+            Cancel
+          </Button>
+          <Button onClick={proceedWithOrder}>Proceed</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Enhanced Add Order Modal */}
+      <Modal
+        isOpen={showAddOrder}
         onClose={() => {
-          setShowCreateOrder(false);
+          setShowAddOrder(false);
           setSelectedTable("");
           setSelectedItems([]);
           setSearchTerm("");
+          setShowWarning(false);
         }}
-        title="Create New Order"
+        title={
+          selectedTable
+            ? tables.find((t) => t.id === selectedTable)?.status === "occupied"
+              ? `Add Items - Table ${
+                  tables.find((t) => t.id === selectedTable)?.name
+                }`
+              : `Create Order - Table ${
+                  tables.find((t) => t.id === selectedTable)?.name
+                }`
+            : "Create New Order"
+        }
         size="lg"
+        className="max-w-4xl w-full mx-4"
       >
-        <div className="space-y-6">
-          {/* Table Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Select Available Table
-            </label>
-            {availableTables.length > 0 ? (
-              <div className="grid grid-cols-3 gap-3">
-                {availableTables.map((table) => (
-                  <button
-                    key={table.id}
-                    onClick={() => setSelectedTable(table.id)}
-                    className={`p-4 rounded-lg border-2 text-center transition-all hover:shadow-md ${
-                      selectedTable === table.id
-                        ? "border-[#cc6600] bg-orange-50 text-[#cc6600] shadow-md"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div className="font-medium text-lg">{table.name}</div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      <Users className="h-3 w-3 inline mr-1" />
-                      {table.seats} seats
-                    </div>
-                    <div className="text-xs text-green-600 mt-1 font-medium">
-                      Available
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 bg-gray-50 rounded-lg">
-                <Users className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500">No tables available</p>
-                <p className="text-sm text-gray-400">
-                  All tables are currently occupied
-                </p>
-              </div>
-            )}
-          </div>
+        <div className="flex flex-col lg:flex-row gap-4 max-h-[70vh]">
+          {/* Left Side - Search Items */}
+          <div className="flex-1">
+            <h3 className="text-base font-semibold text-gray-900 mb-3">
+              Add Items
+            </h3>
 
-          {/* Menu Item Search and Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Add Menu Items
-            </label>
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            {/* Search Bar */}
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search menu items by name..."
+                placeholder="Search for food items..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#cc6600] focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#cc6600] focus:border-transparent"
               />
             </div>
 
             {/* Search Results */}
-            {searchTerm && (
-              <div className="mb-4 max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
-                {filteredMenu.length > 0 ? (
-                  <div className="divide-y divide-gray-100">
-                    {filteredMenu.map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => addItemToSelection(item)}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              {item.name}
+            <div className="h-64 overflow-y-auto">
+              {searchTerm ? (
+                <div>
+                  <h4 className="text-xs font-medium text-gray-700 mb-2">
+                    Search Results{" "}
+                    {filteredMenu.length > 5 &&
+                      `(showing 5 of ${filteredMenu.length})`}
+                  </h4>
+                  <div className="space-y-1">
+                    {filteredMenu.length > 0 ? (
+                      filteredMenu.slice(0, 5).map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => addItemToSelectedItems(item)}
+                          className="w-full p-2 text-left hover:bg-gray-50 border border-gray-200 rounded-md transition-colors"
+                        >
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="font-medium text-gray-900 text-sm">
+                                {item.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {item.category}
+                              </div>
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {item.category}
+                            <div className="text-[#cc6600] font-bold text-sm">
+                              ₹{item.price}
                             </div>
                           </div>
-                          <div className="text-[#cc6600] font-medium">
-                            ₹{item.price}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="px-4 py-8 text-center text-gray-500">
-                    <Search className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p>No items found matching "{searchTerm}"</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Selected Items */}
-          {selectedItems.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Order Items ({selectedItems.length})
-              </label>
-              <div className="space-y-3 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4">
-                {selectedItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">
-                        {item.name}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        ₹{item.price} × {item.qty} = ₹{item.price * item.qty}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => updateItemQuantity(item.id, -1)}
-                          className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
-                        >
-                          <Minus className="h-4 w-4" />
                         </button>
-                        <span className="w-8 text-center font-medium">
-                          {item.qty}
-                        </span>
-                        <button
-                          onClick={() => updateItemQuantity(item.id, 1)}
-                          className="w-8 h-8 rounded-full bg-[#cc6600] hover:bg-[#b35500] text-white flex items-center justify-center transition-colors"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
+                      ))
+                    ) : (
+                      <div className="py-6 text-gray-500 text-center text-sm">
+                        No items found
                       </div>
-                      <button
-                        onClick={() => removeItemFromSelection(item.id)}
-                        className="text-red-600 hover:text-red-800 p-1"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Order Summary */}
-              <div className="mt-4 p-4 bg-gradient-to-r from-[#cc6600] to-[#b35500] text-white rounded-lg">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm opacity-90">
-                      Total Items:{" "}
-                      {selectedItems.reduce((sum, item) => sum + item.qty, 0)}
-                    </p>
-                    <p className="text-lg font-bold">
-                      Total Amount: ₹{totalAmount}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm opacity-90">
-                      Table:{" "}
-                      {selectedTable
-                        ? tables.find((t) => t.id === selectedTable)?.name
-                        : "None"}
-                    </p>
+                    )}
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Search className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <h4 className="text-sm font-medium text-gray-700 mb-1">
+                    Search to Find Items
+                  </h4>
+                  <p className="text-xs text-gray-500">
+                    Use the search box above to find menu items
+                  </p>
+                </div>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Right Side - Order Summary */}
+          <div className="w-full lg:w-72">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 h-full">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-base font-semibold text-gray-900">
+                  Order Summary
+                </h3>
+                {selectedItems.length > 0 && (
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    {selectedItems.reduce((sum, item) => sum + item.qty, 0)}{" "}
+                    items
+                  </span>
+                )}
+              </div>
+
+              {selectedItems.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {selectedItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900 text-sm">
+                              {item.name}
+                            </h4>
+                            <p className="text-xs text-gray-500">
+                              ₹{item.price} × {item.qty} = ₹
+                              {(item.price * item.qty).toFixed(2)}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => removeSelectedItem(item.id)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                            title="Remove item"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-2 bg-gray-50 rounded-md p-1">
+                          <button
+                            onClick={() =>
+                              updateSelectedItemQuantity(item.id, -1)
+                            }
+                            className="w-6 h-6 rounded-full bg-white border border-gray-300 hover:bg-gray-100 flex items-center justify-center"
+                          >
+                            <Minus className="h-3 w-3 text-gray-600" />
+                          </button>
+                          <span className="w-6 text-center font-semibold text-gray-800 text-sm">
+                            {item.qty}
+                          </span>
+                          <button
+                            onClick={() =>
+                              updateSelectedItemQuantity(item.id, 1)
+                            }
+                            className="w-6 h-6 rounded-full bg-[#cc6600] hover:bg-[#b35500] text-white flex items-center justify-center"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Order Total */}
+                  <div className="bg-gradient-to-r from-[#cc6600] to-[#b35500] p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-white text-sm">
+                        Total:
+                      </span>
+                      <span className="text-xl font-bold text-white">
+                        ₹{totalAmount}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Create Order Button */}
+                  <Button
+                    onClick={addOrder}
+                    disabled={!selectedTable || selectedItems.length === 0}
+                    className="w-full py-2 text-sm font-semibold bg-gradient-to-r from-[#cc6600] to-[#b35500] hover:from-[#b35500] hover:to-[#a04000]"
+                  >
+                    {selectedTable &&
+                    tables.find((t) => t.id === selectedTable)?.status ===
+                      "occupied"
+                      ? "Add to Order"
+                      : "Create Order"}
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <Plus className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h4 className="text-gray-600 font-medium mb-2">
+                    No items selected
+                  </h4>
+                  <p className="text-sm text-gray-500">
+                    Search and click items to add them to your order
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* View Order Modal */}
+      <Modal
+        isOpen={showViewOrder}
+        onClose={() => setShowViewOrder(false)}
+        title=""
+        size="lg"
+        className="max-h-[90vh] overflow-hidden"
+      >
+        <div className="space-y-6">
+          {selectedTable &&
+            (() => {
+              const tableOrders = getTableOrders(selectedTable);
+              const tableTotal = getTableTotal(selectedTable);
+              const table = tables.find((t) => t.id === selectedTable);
+
+              if (tableOrders.length === 0) {
+                return (
+                  <div className="text-center py-12 text-gray-500">
+                    <ShoppingCart className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No Orders Found
+                    </h3>
+                    <p className="text-gray-500">
+                      This table doesn't have any active orders
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div>
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-[#cc6600] to-[#b35500] rounded-xl p-6 text-white mb-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-2xl font-bold mb-2">
+                          {table?.name}
+                        </h2>
+                        <div className="flex items-center gap-4 text-orange-100">
+                          <span className="flex items-center gap-1">
+                            <ShoppingCart className="h-4 w-4" />
+                            {tableOrders.reduce(
+                              (total, order) => total + order.items.length,
+                              0
+                            )}{" "}
+                            Items
+                          </span>
+                          <span className="flex items-center gap-1">
+                            👥 {table?.seats} Seats
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-orange-100 text-sm">
+                          Total Amount
+                        </div>
+                        <div className="text-3xl font-bold">₹{tableTotal}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order Items */}
+                  <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                    {tableOrders.map((order) =>
+                      order.items.map((item, index) => (
+                        <div
+                          key={`${item.id}-${index}`}
+                          className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900 text-lg mb-1">
+                                {item.name}
+                              </h4>
+                              <div className="flex items-center gap-3 text-sm text-gray-500">
+                                <span>₹{item.price} per item</span>
+                                <span>•</span>
+                                <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-medium">
+                                  Qty: {item.qty}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-2xl font-bold text-[#cc6600]">
+                                ₹{(item.price * item.qty).toFixed(2)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Order Summary */}
+                  <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                          Order Summary
+                        </h3>
+                        <p className="text-gray-500 text-sm">
+                          {tableOrders.reduce(
+                            (total, order) => total + order.items.length,
+                            0
+                          )}{" "}
+                          items ordered
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-[#cc6600]">
+                          ₹{tableTotal}
+                        </div>
+                        <div className="text-gray-500 text-sm">
+                          Total Amount
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+        </div>
+
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowViewOrder(false)}
+            className="flex items-center gap-2"
+          >
+            <X className="h-4 w-4" />
+            Close
+          </Button>
+          <Button
+            onClick={() => {
+              setShowViewOrder(false);
+              handleTableClick(selectedTable, "checkout");
+            }}
+            className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+          >
+            <CreditCard className="h-4 w-4" />
+            Proceed to Checkout
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Checkout Modal */}
+      <Modal
+        isOpen={showCheckout}
+        onClose={() => {
+          setShowCheckout(false);
+          setSelectedTable("");
+          setCustomerEmail("");
+          setSendBill(false);
+        }}
+        title=""
+        size="lg"
+        className="max-w-2xl"
+      >
+        <div className="space-y-6">
+          {selectedTable &&
+            (() => {
+              const table = tables.find((t) => t.id === selectedTable);
+              const tableOrders = getTableOrders(selectedTable);
+              const tableTotal = getTableTotal(selectedTable);
+
+              return (
+                <div>
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-xl p-6 text-white mb-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-2xl font-bold mb-2">
+                          Checkout Confirmation
+                        </h2>
+                        <p className="text-green-100">
+                          Table {table?.name} • {table?.seats} Seats
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-green-100 text-sm">
+                          Total Amount
+                        </div>
+                        <div className="text-3xl font-bold">₹{tableTotal}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order Summary */}
+                  <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                    <h3 className="font-semibold text-gray-900 mb-3">
+                      Order Summary
+                    </h3>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {tableOrders.map((order) =>
+                        order.items.map((item, index) => (
+                          <div
+                            key={`${item.id}-${index}`}
+                            className="flex justify-between items-center py-2"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="font-medium text-gray-900">
+                                {item.name}
+                              </span>
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                                {item.qty}x
+                              </span>
+                            </div>
+                            <span className="font-semibold text-[#cc6600]">
+                              ₹{(item.price * item.qty).toFixed(2)}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="border-t pt-3 mt-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold text-gray-900">
+                          Total:
+                        </span>
+                        <span className="text-2xl font-bold text-[#cc6600]">
+                          ₹{tableTotal}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Email Bill Option */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-4">
+                    <div className="flex items-center gap-3 mb-4">
+                      <input
+                        type="checkbox"
+                        id="sendBill"
+                        checked={sendBill}
+                        onChange={(e) => setSendBill(e.target.checked)}
+                        className="w-4 h-4 text-[#cc6600] bg-gray-100 border-gray-300 rounded focus:ring-[#cc6600] focus:ring-2"
+                      />
+                      <label
+                        htmlFor="sendBill"
+                        className="text-sm font-medium text-gray-900"
+                      >
+                        Send digital bill via email
+                      </label>
+                    </div>
+
+                    {sendBill && (
+                      <div className="space-y-2">
+                        <label
+                          htmlFor="customerEmail"
+                          className="block text-sm font-medium text-gray-700"
+                        >
+                          Customer Email Address
+                        </label>
+                        <input
+                          type="email"
+                          id="customerEmail"
+                          value={customerEmail}
+                          onChange={(e) => setCustomerEmail(e.target.value)}
+                          placeholder="customer@example.com"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#cc6600] focus:border-transparent"
+                        />
+                        <p className="text-xs text-gray-500">
+                          A digital copy of the bill will be sent to this email
+                          address
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
         </div>
 
         <Modal.Footer>
           <Button
             variant="secondary"
             onClick={() => {
-              setShowCreateOrder(false);
+              setShowCheckout(false);
               setSelectedTable("");
-              setSelectedItems([]);
-              setSearchTerm("");
+              setCustomerEmail("");
+              setSendBill(false);
             }}
+            className="flex items-center gap-2"
           >
+            <X className="h-4 w-4" />
             Cancel
           </Button>
           <Button
-            onClick={createNewOrder}
-            disabled={!selectedTable || selectedItems.length === 0}
-            className="bg-[#cc6600] hover:bg-[#b35500]"
+            onClick={confirmCheckout}
+            className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
           >
-            Create Order (₹{totalAmount})
+            <CreditCard className="h-4 w-4" />
+            Complete Checkout
           </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Order Details Modal */}
-      <Modal
-        isOpen={showOrderDetails}
-        onClose={() => {
-          setShowOrderDetails(false);
-          setSelectedOrderId(null);
-        }}
-        title={`Order Details - ${selectedOrderTable?.name || "Table"}`}
-        size="lg"
-      >
-        {selectedOrder && selectedOrderTable && (
-          <div className="space-y-6">
-            {/* Order Header */}
-            <div className="bg-gradient-to-r from-[#cc6600] to-[#b35500] text-white p-4 rounded-lg">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-bold">
-                    {selectedOrderTable.name}
-                  </h3>
-                  <p className="text-sm opacity-90">
-                    <Users className="h-4 w-4 inline mr-1" />
-                    {selectedOrderTable.seats} seats
-                  </p>
-                  <p className="text-sm opacity-90 mt-1">
-                    Order ID: {selectedOrder.id.slice(-8)}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm opacity-90">Started at</p>
-                  <p className="font-medium">
-                    {new Date(selectedOrder.createdAt).toLocaleTimeString()}
-                  </p>
-                  <p className="text-xs opacity-75">
-                    {new Date(selectedOrder.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Order Items */}
-            <div>
-              <h4 className="text-lg font-semibold text-[#3b1a0b] mb-4">
-                Order Items
-              </h4>
-              {selectedOrder.items.length > 0 ? (
-                <div className="space-y-3">
-                  {selectedOrder.items
-                    .reduce((groupedItems, item) => {
-                      const existing = groupedItems.find(
-                        (g) => g.menuItemId === item.menuItemId
-                      );
-                      if (existing) {
-                        existing.qty += item.qty;
-                        existing.total += item.price * item.qty;
-                      } else {
-                        groupedItems.push({
-                          ...item,
-                          qty: item.qty,
-                          total: item.price * item.qty,
-                        });
-                      }
-                      return groupedItems;
-                    }, [])
-                    .map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                      >
-                        <div className="flex-1">
-                          <h5 className="font-medium text-gray-900">
-                            {item.name}
-                          </h5>
-                          <p className="text-sm text-gray-600">
-                            ₹{item.price} each
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium text-gray-900">
-                            Qty: {item.qty}
-                          </p>
-                          <p className="text-sm text-gray-600">₹{item.total}</p>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Search className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p>No items in this order</p>
-                </div>
-              )}
-            </div>
-
-            {/* Order Summary */}
-            <div className="border-t pt-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600">Total Items:</span>
-                  <span className="font-medium">
-                    {selectedOrder.items.length}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-medium">
-                    ₹{calculateOrderTotal(selectedOrder)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-lg font-bold text-[#3b1a0b] border-t pt-2">
-                  <span>Total Amount:</span>
-                  <span>₹{calculateOrderTotal(selectedOrder)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setShowOrderDetails(false);
-              setSelectedOrderId(null);
-            }}
-          >
-            Close
-          </Button>
-          {selectedOrder && (
-            <Button
-              onClick={() => handleCheckout(selectedOrder.id)}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <CreditCard className="h-4 w-4 mr-2" />
-              Checkout & Free Table
-            </Button>
-          )}
         </Modal.Footer>
       </Modal>
     </div>
