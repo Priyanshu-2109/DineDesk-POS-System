@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import { useAuth } from "../context/AuthContext";
+import PaymentModal from "../components/PaymentModal";
 import {
   ArrowRight,
   Check,
@@ -11,7 +13,45 @@ import {
 } from "lucide-react";
 
 const Home = () => {
-  const { openAuthModal } = useApp();
+  const { openAuthModal, openContactModal } = useApp();
+  const { isAuthenticated, user } = useAuth();
+  const [isYearly, setIsYearly] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Function to calculate yearly price with 20% discount
+  const calculateYearlyPrice = (monthlyPrice) => {
+    return Math.round(monthlyPrice * 12 * 0.8);
+  };
+
+  // Function to get display price based on billing period
+  const getDisplayPrice = (monthlyPrice) => {
+    return isYearly ? calculateYearlyPrice(monthlyPrice) : monthlyPrice;
+  };
+
+  const handleSelectPlan = (plan) => {
+    if (!isAuthenticated) {
+      openAuthModal("login");
+      return;
+    }
+
+    // Create enhanced plan details with current pricing period
+    const enhancedPlan = {
+      ...plan,
+      price: getDisplayPrice(plan.price),
+      interval: isYearly ? "year" : plan.interval,
+      originalPrice: plan.price,
+      isYearly: isYearly,
+    };
+
+    setSelectedPlan(enhancedPlan);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleClosePaymentModal = () => {
+    setIsPaymentModalOpen(false);
+    setSelectedPlan(null);
+  };
 
   const features = [
     {
@@ -38,9 +78,12 @@ const Home = () => {
 
   const pricingPlans = [
     {
+      id: "starter",
       name: "Starter",
       price: 999,
       period: "month",
+      interval: "month",
+      description: "Perfect for small restaurants and cafes",
       features: [
         "Up to 10 tables",
         "Basic reporting",
@@ -50,9 +93,12 @@ const Home = () => {
       popular: false,
     },
     {
+      id: "professional",
       name: "Professional",
       price: 2499,
       period: "month",
+      interval: "month",
+      description: "Ideal for growing restaurants",
       features: [
         "Up to 50 tables",
         "Advanced analytics",
@@ -63,9 +109,12 @@ const Home = () => {
       popular: true,
     },
     {
+      id: "enterprise",
       name: "Enterprise",
       price: 4999,
       period: "month",
+      interval: "month",
+      description: "For large restaurant chains",
       features: [
         "Unlimited tables",
         "Custom integrations",
@@ -95,7 +144,7 @@ const Home = () => {
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-10">
             <button
               onClick={() => openAuthModal("signup")}
-              className="px-8 py-4 bg-[#cc6600] text-white rounded-xl font-semibold text-lg hover:bg-[#b35500] transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center gap-3"
+              className="px-8 py-4 bg-[#cc6600] text-white rounded-xl font-semibold text-lg hover:bg-[#b35500] transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center gap-3 focus:outline-none focus:ring-0"
             >
               Get Started
               <ArrowRight className="h-5 w-5" />
@@ -172,6 +221,37 @@ const Home = () => {
             </p>
           </div>
 
+          {/* Billing Toggle */}
+          <div className="flex items-center justify-center mb-12">
+            <div className="bg-white rounded-xl p-2 shadow-lg border border-gray-200">
+              <div className="flex items-center space-x-1">
+                <button
+                  onClick={() => setIsYearly(false)}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 focus:outline-none focus:ring-0 ${
+                    !isYearly
+                      ? "bg-[#cc6600] text-white shadow-md"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setIsYearly(true)}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 relative focus:outline-none focus:ring-0 ${
+                    isYearly
+                      ? "bg-[#cc6600] text-white shadow-md"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
+                >
+                  Yearly
+                  <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                    Save 20%
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {pricingPlans.map((plan, index) => (
               <div
@@ -194,11 +274,24 @@ const Home = () => {
                   <h3 className="text-2xl font-bold text-[#3b1a0b] mb-4">
                     {plan.name}
                   </h3>
-                  <div className="flex items-center justify-center">
-                    <span className="text-4xl font-bold text-[#3b1a0b]">
-                      ₹{plan.price.toLocaleString("en-IN")}
-                    </span>
-                    <span className="text-gray-500 ml-2">/{plan.period}</span>
+                  <div className="flex items-center justify-center flex-col">
+                    <div className="flex items-center justify-center">
+                      <span className="text-4xl font-bold text-[#3b1a0b]">
+                        ₹{getDisplayPrice(plan.price).toLocaleString("en-IN")}
+                      </span>
+                      <span className="text-gray-500 ml-2">
+                        /{isYearly ? "year" : plan.period}
+                      </span>
+                    </div>
+                    {isYearly && (
+                      <div className="text-sm text-green-600 mt-2 font-medium">
+                        ₹
+                        {Math.round(
+                          getDisplayPrice(plan.price) / 12
+                        ).toLocaleString("en-IN")}
+                        /month when paid yearly
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -212,14 +305,18 @@ const Home = () => {
                 </ul>
 
                 <button
-                  onClick={() => openAuthModal("signup")}
-                  className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 ${
+                  onClick={() => handleSelectPlan(plan)}
+                  className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 focus:outline-none focus:ring-0 ${
                     plan.popular
                       ? "bg-[#cc6600] text-white hover:bg-[#b35500]"
                       : "border-2 border-[#cc6600] text-[#cc6600] hover:bg-[#cc6600] hover:text-white"
                   }`}
                 >
-                  Get Started
+                  {!isAuthenticated
+                    ? "Login to Subscribe"
+                    : user?.subscription === plan.id
+                    ? "Current Plan"
+                    : "Subscribe Now"}
                 </button>
               </div>
             ))}
@@ -250,8 +347,8 @@ const Home = () => {
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <button
-              onClick={() => openAuthModal("signup")}
-              className="px-8 py-4 bg-[#cc6600] text-white rounded-xl font-semibold text-lg hover:bg-[#b35500] transition-all duration-300 transform hover:scale-105"
+              onClick={openContactModal}
+              className="px-8 py-4 bg-[#cc6600] text-white rounded-xl font-semibold text-lg hover:bg-[#b35500] transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-0"
             >
               Start Your Free Trial
             </button>
@@ -268,6 +365,14 @@ const Home = () => {
           </p>
         </div>
       </section>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={handleClosePaymentModal}
+        plan={selectedPlan?.id}
+        planDetails={selectedPlan}
+      />
     </div>
   );
 };

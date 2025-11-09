@@ -1,12 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import LoginPopup from "./LoginPopup";
+import ContactFormModal from "./ContactFormModal";
 import { useApp } from "../context/AppContext";
+import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
   const [active, setActive] = useState("home");
   const [scrolled, setScrolled] = useState(false);
-  const { user, openAuthModal, closeAuthModal, authModal, logout } = useApp();
+  const {
+    openAuthModal,
+    closeAuthModal,
+    authModal,
+    contactModal,
+    openContactModal,
+    closeContactModal,
+  } = useApp();
+  const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -22,8 +32,8 @@ const Navbar = () => {
     openAuthModal("login");
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 
@@ -111,8 +121,15 @@ const Navbar = () => {
 
         {/* Auth Section */}
         <div className="flex items-center gap-4">
-          {user ? (
+          {isAuthenticated ? (
             <div className="flex items-center gap-4">
+              <span
+                className={`text-sm ${
+                  scrolled ? "text-[#3b1a0b]" : "text-[#3b1a0b] drop-shadow-lg"
+                }`}
+              >
+                Welcome, {user?.name}
+              </span>
               <Link
                 to="/dashboard"
                 className="px-4 py-2 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-colors font-medium"
@@ -158,6 +175,8 @@ const Navbar = () => {
         initialMode={authModal.mode}
         onClose={closeAuthModal}
       />
+
+      <ContactFormModal isOpen={contactModal} onClose={closeContactModal} />
     </>
   );
 };

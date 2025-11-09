@@ -33,6 +33,9 @@ export const AppProvider = ({ children }) => {
   // Auth modal state
   const [authModal, setAuthModal] = useState({ isOpen: false, mode: "login" });
 
+  // Contact form modal state
+  const [contactModal, setContactModal] = useState(false);
+
   // Restaurant setup state
   const [restaurant, setRestaurant] = useState({ name: "" });
   const [tables, setTables] = useState(initialTables);
@@ -55,6 +58,9 @@ export const AppProvider = ({ children }) => {
   const openAuthModal = (mode = "login") =>
     setAuthModal({ isOpen: true, mode });
   const closeAuthModal = () => setAuthModal((m) => ({ ...m, isOpen: false }));
+
+  const openContactModal = () => setContactModal(true);
+  const closeContactModal = () => setContactModal(false);
 
   const updateRestaurantName = (name) => setRestaurant((r) => ({ ...r, name }));
 
@@ -213,6 +219,10 @@ export const AppProvider = ({ children }) => {
       authModal,
       openAuthModal,
       closeAuthModal,
+      // Contact modal
+      contactModal,
+      openContactModal,
+      closeContactModal,
       // data
       restaurant,
       updateRestaurantName,
@@ -232,7 +242,7 @@ export const AppProvider = ({ children }) => {
       getOrderTotal,
       getTableTotal,
     }),
-    [user, authModal, restaurant, tables, menu, orders]
+    [user, authModal, contactModal, restaurant, tables, menu, orders]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
