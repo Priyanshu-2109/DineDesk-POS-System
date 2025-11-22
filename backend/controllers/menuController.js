@@ -1,6 +1,6 @@
-const { validationResult } = require('express-validator');
-const MenuItem = require('../models/MenuItem');
-const Restaurant = require('../models/Restaurant');
+const { validationResult } = require("express-validator");
+const MenuItem = require("../models/MenuItem");
+const Restaurant = require("../models/Restaurant");
 
 // @desc    Add a new menu item
 // @route   POST /api/menu/add-item
@@ -12,50 +12,50 @@ const addItem = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors: errors.array()
+        message: "Validation failed",
+        errors: errors.array(),
       });
     }
 
     const { item_name, category, price } = req.body;
 
-    // Check if user has a restaurant
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    // Check if user has a restaurant, create if doesn't exist
+    let restaurant = await Restaurant.findOne({ owner: req.user._id });
     if (!restaurant) {
-      return res.status(404).json({
-        success: false,
-        message: 'Restaurant not found. Please create restaurant information first.'
+      restaurant = await Restaurant.create({
+        name: `${req.user.name}'s Restaurant`,
+        owner: req.user._id,
       });
     }
 
     // Check if item name already exists in this restaurant
-    const existingItem = await MenuItem.findOne({ 
-      item_name: item_name.trim(), 
-      restaurant: restaurant._id
+    const existingItem = await MenuItem.findOne({
+      item_name: item_name.trim(),
+      restaurant: restaurant._id,
     });
 
     if (existingItem) {
       return res.status(400).json({
         success: false,
-        message: 'Menu item with this name already exists in your restaurant'
+        message: "Menu item with this name already exists in your restaurant",
       });
     }
 
     // Create new menu item
     const menuItem = await MenuItem.create({
       item_name: item_name.trim(),
-      category: category.toLowerCase(),
+      category: category.trim(),
       price: parseFloat(price),
       restaurant: restaurant._id,
-      owner: req.user._id
+      owner: req.user._id,
     });
 
     // Populate restaurant info in response
-    await menuItem.populate('restaurant', 'name');
+    await menuItem.populate("restaurant", "name");
 
     res.status(201).json({
       success: true,
-      message: 'Menu item added successfully',
+      message: "Menu item added successfully",
       menuItem: {
         _id: menuItem._id,
         item_name: menuItem.item_name,
@@ -65,25 +65,27 @@ const addItem = async (req, res) => {
         restaurant: menuItem.restaurant,
         owner: menuItem.owner,
         createdAt: menuItem.createdAt,
-        updatedAt: menuItem.updatedAt
-      }
+        updatedAt: menuItem.updatedAt,
+      },
     });
-
   } catch (error) {
-    console.error('Add menu item error:', error);
-    
+    console.error("Add menu item error:", error);
+
     // Handle duplicate key error
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
-        message: 'Menu item with this name already exists in your restaurant'
+        message: "Menu item with this name already exists in your restaurant",
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Server error during menu item creation',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message: "Server error during menu item creation",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -98,8 +100,8 @@ const editItem = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors: errors.array()
+        message: "Validation failed",
+        errors: errors.array(),
       });
     }
 
@@ -107,48 +109,49 @@ const editItem = async (req, res) => {
     const { item_name, category, price, isAvailable } = req.body;
 
     // Find menu item and ensure it belongs to the current user
-    const menuItem = await MenuItem.findOne({ 
-      _id: id, 
-      owner: req.user._id
+    const menuItem = await MenuItem.findOne({
+      _id: id,
+      owner: req.user._id,
     });
 
     if (!menuItem) {
       return res.status(404).json({
         success: false,
-        message: 'Menu item not found or you do not have permission to edit this item'
+        message:
+          "Menu item not found or you do not have permission to edit this item",
       });
     }
 
     // Check if new item name already exists in this restaurant (excluding current item)
     if (item_name && item_name.trim() !== menuItem.item_name) {
-      const existingItem = await MenuItem.findOne({ 
-        item_name: item_name.trim(), 
+      const existingItem = await MenuItem.findOne({
+        item_name: item_name.trim(),
         restaurant: menuItem.restaurant,
-        _id: { $ne: id }
+        _id: { $ne: id },
       });
 
       if (existingItem) {
         return res.status(400).json({
           success: false,
-          message: 'Menu item with this name already exists in your restaurant'
+          message: "Menu item with this name already exists in your restaurant",
         });
       }
     }
 
     // Update fields
     if (item_name) menuItem.item_name = item_name.trim();
-    if (category) menuItem.category = category.toLowerCase();
+    if (category) menuItem.category = category.trim();
     if (price !== undefined) menuItem.price = parseFloat(price);
     if (isAvailable !== undefined) menuItem.isAvailable = Boolean(isAvailable);
 
     await menuItem.save();
 
     // Populate restaurant info in response
-    await menuItem.populate('restaurant', 'name');
+    await menuItem.populate("restaurant", "name");
 
     res.status(200).json({
       success: true,
-      message: 'Menu item updated successfully',
+      message: "Menu item updated successfully",
       menuItem: {
         _id: menuItem._id,
         item_name: menuItem.item_name,
@@ -158,25 +161,27 @@ const editItem = async (req, res) => {
         restaurant: menuItem.restaurant,
         owner: menuItem.owner,
         createdAt: menuItem.createdAt,
-        updatedAt: menuItem.updatedAt
-      }
+        updatedAt: menuItem.updatedAt,
+      },
     });
-
   } catch (error) {
-    console.error('Edit menu item error:', error);
+    console.error("Edit menu item error:", error);
 
     // Handle duplicate key error
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
-        message: 'Menu item with this name already exists in your restaurant'
+        message: "Menu item with this name already exists in your restaurant",
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Server error during menu item update',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message: "Server error during menu item update",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -191,23 +196,24 @@ const deleteItem = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors: errors.array()
+        message: "Validation failed",
+        errors: errors.array(),
       });
     }
 
     const { id } = req.params;
 
     // Find menu item and ensure it belongs to the current user
-    const menuItem = await MenuItem.findOne({ 
-      _id: id, 
-      owner: req.user._id
+    const menuItem = await MenuItem.findOne({
+      _id: id,
+      owner: req.user._id,
     });
 
     if (!menuItem) {
       return res.status(404).json({
         success: false,
-        message: 'Menu item not found or you do not have permission to delete this item'
+        message:
+          "Menu item not found or you do not have permission to delete this item",
       });
     }
 
@@ -216,21 +222,23 @@ const deleteItem = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Menu item permanently deleted successfully',
+      message: "Menu item permanently deleted successfully",
       deletedItem: {
         _id: menuItem._id,
         item_name: menuItem.item_name,
         category: menuItem.category,
-        price: menuItem.price
-      }
+        price: menuItem.price,
+      },
     });
-
   } catch (error) {
-    console.error('Delete menu item error:', error);
+    console.error("Delete menu item error:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error during menu item deletion',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message: "Server error during menu item deletion",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -245,7 +253,7 @@ const getItems = async (req, res) => {
     if (!restaurant) {
       return res.status(404).json({
         success: false,
-        message: 'Restaurant not found'
+        message: "Restaurant not found",
       });
     }
 
@@ -253,9 +261,9 @@ const getItems = async (req, res) => {
     const { category, available } = req.query;
 
     // Build filter object
-    let filter = { 
-      restaurant: restaurant._id, 
-      owner: req.user._id
+    let filter = {
+      restaurant: restaurant._id,
+      owner: req.user._id,
     };
 
     if (category) {
@@ -263,26 +271,28 @@ const getItems = async (req, res) => {
     }
 
     if (available !== undefined) {
-      filter.isAvailable = available === 'true';
+      filter.isAvailable = available === "true";
     }
 
     // Get all menu items for this restaurant with optional filters
     const menuItems = await MenuItem.find(filter)
-      .populate('restaurant', 'name')
+      .populate("restaurant", "name")
       .sort({ category: 1, item_name: 1 });
 
     res.status(200).json({
       success: true,
       count: menuItems.length,
-      menuItems
+      menuItems,
     });
-
   } catch (error) {
-    console.error('Get menu items error:', error);
+    console.error("Get menu items error:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error while fetching menu items',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message: "Server error while fetching menu items",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -297,37 +307,40 @@ const getItem = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors: errors.array()
+        message: "Validation failed",
+        errors: errors.array(),
       });
     }
 
     const { id } = req.params;
 
     // Find menu item and ensure it belongs to the current user
-    const menuItem = await MenuItem.findOne({ 
-      _id: id, 
-      owner: req.user._id
-    }).populate('restaurant', 'name');
+    const menuItem = await MenuItem.findOne({
+      _id: id,
+      owner: req.user._id,
+    }).populate("restaurant", "name");
 
     if (!menuItem) {
       return res.status(404).json({
         success: false,
-        message: 'Menu item not found or you do not have permission to view this item'
+        message:
+          "Menu item not found or you do not have permission to view this item",
       });
     }
 
     res.status(200).json({
       success: true,
-      menuItem
+      menuItem,
     });
-
   } catch (error) {
-    console.error('Get menu item error:', error);
+    console.error("Get menu item error:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error while fetching menu item',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message: "Server error while fetching menu item",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -337,5 +350,5 @@ module.exports = {
   editItem,
   deleteItem,
   getItems,
-  getItem
+  getItem,
 };

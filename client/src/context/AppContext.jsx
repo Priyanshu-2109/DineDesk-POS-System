@@ -1,125 +1,537 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
+import { useAuth } from "./AuthContext";
 
-// Dummy assets/data
-const initialTables = Array.from({ length: 12 }, (_, i) => ({
-  id: i + 1,
-  name: `T${i + 1}`,
-  seats: [2, 2, 4, 4, 6, 6, 2, 4, 4, 2, 6, 2][i],
-  status: "available", // available | occupied
-  currentOrderId: null,
-}));
-
-const initialMenu = [
-  {
-    id: "m1",
-    name: "Paneer Butter Masala",
-    price: 220,
-    category: "Main Course",
-  },
-  { id: "m2", name: "Masala Dosa", price: 120, category: "South Indian" },
-  { id: "m3", name: "Chole Bhature", price: 150, category: "North Indian" },
-  { id: "m4", name: "Veg Biryani", price: 180, category: "Rice" },
-  { id: "m5", name: "Masala Chai", price: 30, category: "Beverages" },
-];
-
+// Initialize with empty data - new users start with clean slate
+// Data should be fetched from backend or added by user
+const initialTables = [];
+const initialMenu = [];
 const initialOrders = [];
 
 const AppContext = createContext(null);
 
 export const AppProvider = ({ children }) => {
-  // Auth state
-  const [user, setUser] = useState(null); // { name }
+  const { user, token } = useAuth();
+
+  const API_BASE_URL =
+    import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
   // Auth modal state
   const [authModal, setAuthModal] = useState({ isOpen: false, mode: "login" });
+
+  // Contact form modal state
+  const [contactModal, setContactModal] = useState(false);
 
   // Restaurant setup state
   const [restaurant, setRestaurant] = useState({ name: "" });
   const [tables, setTables] = useState(initialTables);
   const [menu, setMenu] = useState(initialMenu);
   const [orders, setOrders] = useState(initialOrders);
+  const [loading, setLoading] = useState(false);
 
-  // Actions
-  const login = (name) => {
-    setUser({ name });
-    setAuthModal({ isOpen: false, mode: "login" });
+  // Fetch data from backend when user logs in
+  useEffect(() => {
+    if (user && token) {
+      fetchRestaurantData();
+      fetchTables();
+      fetchMenu();
+      fetchOrders();
+    } else {
+      // Clear data when user logs out
+      setRestaurant({ name: "" });
+      setTables([]);
+      setMenu([]);
+      setOrders([]);
+    }
+  }, [user, token]);
+
+  // Fetch restaurant info
+  const fetchRestaurantData = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/settings/restaurant`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.restaurant) {
+          setRestaurant({ name: data.restaurant.name || "" });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch restaurant data:", error);
+    }
   };
 
-  const signup = (name) => {
-    setUser({ name });
-    setAuthModal({ isOpen: false, mode: "login" });
+  // Fetch tables from backend
+  const fetchTables = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tables`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Transform backend data to match frontend format
+        const transformedTables = data.tables.map((table) => ({
+          id: table._id,
+          name: table.name,
+          seats: table.capacity,
+          status: table.isOccupied ? "occupied" : "available",
+          currentOrderId: table.currentOrder || null,
+          _id: table._id,
+        }));
+        setTables(transformedTables);
+        
+        // Also fetch orders to sync currentOrderId properly
+        if (token) {
+          await fetchOrders();
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch tables:", error);
+    }
   };
 
-  const logout = () => setUser(null);
+  // Fetch menu from backend
+  const fetchMenu = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/menu`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Transform backend data to match frontend format
+        const transformedMenu = data.menuItems.map((item) => ({
+          id: item._id,
+          name: item.item_name,
+          category: item.category,
+          price: item.price,
+          available: item.isAvailable,
+          _id: item._id,
+        }));
+        setMenu(transformedMenu);
+      }
+    } catch (error) {
+      console.error("Failed to fetch menu:", error);
+    }
+  };
+
+  // Fetch orders from backend
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Transform backend data to match frontend format
+        const transformedOrders = data.orders.map((order) => ({
+          id: order._id,
+          tableId: order.table._id || order.table,
+          items: order.items.map((item) => ({
+            id: `${order._id}-${item.menuItem}`,
+            menuItemId: item.menuItem,
+            name: item.item_name || item.menuItem.item_name,
+            price: item.price,
+            qty: item.quantity,
+          })),
+          status: order.status === "completed" ? "complete" : "open",
+          createdAt: order.createdAt,
+          orderNumber: order.orderNumber,
+          _id: order._id,
+        }));
+        setOrders(transformedOrders);
+      }
+    } catch (error) {
+      console.error("Failed to fetch orders:", error);
+    }
+  };
 
   const openAuthModal = (mode = "login") =>
     setAuthModal({ isOpen: true, mode });
   const closeAuthModal = () => setAuthModal((m) => ({ ...m, isOpen: false }));
 
-  const updateRestaurantName = (name) => setRestaurant((r) => ({ ...r, name }));
+  const openContactModal = () => setContactModal(true);
+  const closeContactModal = () => setContactModal(false);
 
-  const addTable = (tableNumber, capacity = 4) => {
-    const id = tables.length ? Math.max(...tables.map((t) => t.id)) + 1 : 1;
-    setTables((prev) => [
-      ...prev,
-      {
-        id,
-        name: `T${tableNumber || id}`,
-        seats: capacity,
-        status: "available",
-        currentOrderId: null,
-      },
-    ]);
+  // Update restaurant name in backend
+  const updateRestaurantName = async (name) => {
+    setRestaurant((r) => ({ ...r, name }));
+
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/settings/restaurant/name`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to update restaurant name");
+      }
+    } catch (error) {
+      console.error("Error updating restaurant name:", error);
+    }
   };
 
-  const removeTable = (id) =>
-    setTables((prev) => prev.filter((t) => t.id !== id));
-
-  const addMenuItem = (item) => {
-    const id = `m${Date.now()}`;
-    setMenu((prev) => [...prev, { id, ...item }]);
-  };
-
-  const createOrder = (tableId) => {
-    const id = `o${Date.now()}`;
-    const order = {
-      id,
-      tableId,
-      items: [],
-      status: "open",
-      createdAt: new Date().toISOString(),
+  // Add table to backend
+  const addTable = async (tableNumber, capacity = 4) => {
+    // Optimistically update UI
+    const tempId = `temp-${Date.now()}`;
+    const tableName = tableNumber || `Table ${tables.length + 1}`;
+    const newTable = {
+      id: tempId,
+      name: tableName,
+      seats: capacity,
+      status: "available",
+      currentOrderId: null,
     };
-    setOrders((prev) => [order, ...prev]);
-    setTables((prev) =>
-      prev.map((t) =>
-        t.id === tableId ? { ...t, status: "occupied", currentOrderId: id } : t
+    setTables((prev) => [...prev, newTable]);
+
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/tables/add-table`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: tableName,
+          capacity,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Replace temp table with real data from backend
+        setTables((prev) =>
+          prev.map((t) =>
+            t.id === tempId
+              ? {
+                  id: data.table._id,
+                  name: data.table.name,
+                  seats: data.table.capacity,
+                  status: data.table.isOccupied ? "occupied" : "available",
+                  currentOrderId: null,
+                  _id: data.table._id,
+                }
+              : t
+          )
+        );
+      } else {
+        // Remove temp table on error
+        setTables((prev) => prev.filter((t) => t.id !== tempId));
+        const errorData = await response.json();
+        console.error("Failed to add table:", errorData.message);
+        throw new Error(errorData.message || "Failed to add table");
+      }
+    } catch (error) {
+      // Remove temp table on error
+      setTables((prev) => prev.filter((t) => t.id !== tempId));
+      console.error("Error adding table:", error);
+      throw error;
+    }
+  };
+
+  // Remove table from backend
+  const removeTable = async (id) => {
+    // Optimistically remove from UI
+    const tableToRemove = tables.find((t) => t.id === id || t._id === id);
+    setTables((prev) => prev.filter((t) => t.id !== id && t._id !== id));
+
+    if (!token || !tableToRemove?._id) return;
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/tables/delete-table/${tableToRemove._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        // Restore table on error
+        setTables((prev) => [...prev, tableToRemove]);
+        const errorData = await response.json();
+        console.error("Failed to delete table:", errorData.message);
+        alert(errorData.message || "Failed to delete table");
+      }
+    } catch (error) {
+      // Restore table on error
+      setTables((prev) => [...prev, tableToRemove]);
+      console.error("Error deleting table:", error);
+      alert("Error deleting table. Please try again.");
+    }
+  };
+
+  // Add menu item to backend
+  const addMenuItem = async (item) => {
+    // Optimistically update UI
+    const tempId = `temp-${Date.now()}`;
+    const newItem = { id: tempId, ...item };
+    setMenu((prev) => [...prev, newItem]);
+
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/menu/add-item`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          item_name: item.name,
+          category: item.category,
+          price: item.price,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Replace temp item with real data from backend
+        setMenu((prev) =>
+          prev.map((m) =>
+            m.id === tempId
+              ? {
+                  id: data.menuItem._id,
+                  name: data.menuItem.item_name,
+                  category: data.menuItem.category,
+                  price: data.menuItem.price,
+                  available: data.menuItem.isAvailable,
+                  _id: data.menuItem._id,
+                }
+              : m
+          )
+        );
+      } else {
+        // Remove temp item on error
+        setMenu((prev) => prev.filter((m) => m.id !== tempId));
+        const errorData = await response.json();
+        console.error("Failed to add menu item:", errorData.message);
+        throw new Error(errorData.message || "Failed to add menu item");
+      }
+    } catch (error) {
+      // Remove temp item on error
+      setMenu((prev) => prev.filter((m) => m.id !== tempId));
+      console.error("Error adding menu item:", error);
+      throw error;
+    }
+  };
+
+  // Update menu item
+  const updateMenuItem = async (itemId, updates) => {
+    // Optimistically update UI
+    const oldMenu = [...menu];
+    setMenu((prev) =>
+      prev.map((m) =>
+        m.id === itemId || m._id === itemId ? { ...m, ...updates } : m
       )
     );
-    return id;
+
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/menu/update-item/${itemId}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updates),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update with real data from backend
+        setMenu((prev) =>
+          prev.map((m) =>
+            m.id === itemId || m._id === itemId
+              ? {
+                  ...m,
+                  id: data.menuItem._id,
+                  name: data.menuItem.item_name,
+                  category: data.menuItem.category,
+                  price: data.menuItem.price,
+                  available: data.menuItem.isAvailable,
+                  _id: data.menuItem._id,
+                }
+              : m
+          )
+        );
+      } else {
+        // Rollback on error
+        setMenu(oldMenu);
+        const errorData = await response.json();
+        console.error("Failed to update menu item:", errorData.message);
+        throw new Error(errorData.message || "Failed to update menu item");
+      }
+    } catch (error) {
+      // Rollback on error
+      setMenu(oldMenu);
+      console.error("Error updating menu item:", error);
+      throw error;
+    }
   };
 
-  const addItemToOrder = (orderId, menuItemId) => {
+  // Remove menu item
+  const removeMenuItem = async (itemId) => {
+    // Optimistically remove from UI
+    const oldMenu = [...menu];
+    setMenu((prev) => prev.filter((m) => m.id !== itemId && m._id !== itemId));
+
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/menu/delete-item/${itemId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        // Rollback on error
+        setMenu(oldMenu);
+        const errorData = await response.json();
+        console.error("Failed to delete menu item:", errorData.message);
+        throw new Error(errorData.message || "Failed to delete menu item");
+      }
+    } catch (error) {
+      // Rollback on error
+      setMenu(oldMenu);
+      console.error("Error deleting menu item:", error);
+      throw error;
+    }
+  };
+
+  const createOrder = async (tableId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders/create`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tableId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to create order');
+      }
+
+      const data = await response.json();
+      const order = {
+        id: data.order._id,
+        tableId: tableId,
+        items: [],
+        status: "open",
+        createdAt: data.order.createdAt,
+        orderNumber: data.order.orderNumber,
+      };
+      
+      setOrders((prev) => [order, ...prev]);
+      setTables((prev) =>
+        prev.map((t) =>
+          t.id === tableId ? { ...t, status: "occupied", currentOrderId: order.id } : t
+        )
+      );
+      
+      return order.id;
+    } catch (error) {
+      console.error('Error creating order:', error);
+      throw error;
+    }
+  };
+
+  const addItemToOrder = async (orderId, menuItemId) => {
     const item = menu.find((m) => m.id === menuItemId);
     if (!item) return;
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === orderId
-          ? {
-              ...o,
-              items: [
-                ...o.items,
-                {
-                  id: `${orderId}-${Date.now()}`,
-                  menuItemId,
-                  name: item.name,
-                  price: item.price,
-                  qty: 1,
-                },
-              ],
-            }
-          : o
-      )
-    );
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/add-item`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ menuItemId, quantity: 1 }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add item to order');
+      }
+
+      // Update local state optimistically
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? {
+                ...o,
+                items: [
+                  ...o.items,
+                  {
+                    id: `${orderId}-${Date.now()}`,
+                    menuItemId,
+                    name: item.name,
+                    price: item.price,
+                    qty: 1,
+                  },
+                ],
+              }
+            : o
+        )
+      );
+      
+      // Refresh orders to get updated data from backend
+      await fetchOrders();
+    } catch (error) {
+      console.error('Error adding item to order:', error);
+      throw error;
+    }
   };
 
   const markOrderComplete = (orderId) => {
@@ -136,10 +548,32 @@ export const AppProvider = ({ children }) => {
     );
   };
 
-  const checkoutTable = (tableId) => {
+  const checkoutTable = async (tableId) => {
     const table = tables.find((t) => t.id === tableId);
     if (table && table.currentOrderId) {
-      markOrderComplete(table.currentOrderId);
+      try {
+        const response = await fetch(`${API_BASE_URL}/orders/${table.currentOrderId}/checkout`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to checkout order');
+        }
+
+        // Update local state
+        markOrderComplete(table.currentOrderId);
+        
+        // Refresh data from backend
+        await fetchOrders();
+        await fetchTables();
+      } catch (error) {
+        console.error('Error during checkout:', error);
+        throw error;
+      }
     }
   };
 
@@ -204,15 +638,14 @@ export const AppProvider = ({ children }) => {
 
   const value = useMemo(
     () => ({
-      // auth
-      user,
-      login,
-      signup,
-      logout,
       // modal
       authModal,
       openAuthModal,
       closeAuthModal,
+      // Contact modal
+      contactModal,
+      openContactModal,
+      closeContactModal,
       // data
       restaurant,
       updateRestaurantName,
@@ -221,6 +654,8 @@ export const AppProvider = ({ children }) => {
       removeTable,
       menu,
       addMenuItem,
+      updateMenuItem,
+      removeMenuItem,
       orders,
       createOrder,
       addItemToOrder,
@@ -231,8 +666,23 @@ export const AppProvider = ({ children }) => {
       getTableOrders,
       getOrderTotal,
       getTableTotal,
+      // fetch functions
+      fetchTables,
+      fetchMenu,
+      fetchOrders,
+      loading,
     }),
-    [user, authModal, restaurant, tables, menu, orders]
+    [
+      authModal,
+      contactModal,
+      restaurant,
+      tables,
+      menu,
+      orders,
+      user,
+      token,
+      loading,
+    ]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

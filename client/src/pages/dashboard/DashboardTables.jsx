@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Plus, Trash2, Users } from "lucide-react";
+import toast from "react-hot-toast";
 import { useApp } from "../../context/AppContext";
 import Modal from "../../components/ui/Modal";
 import Button from "../../components/ui/Button";
@@ -40,20 +41,36 @@ const DashboardTables = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleAddTable = () => {
+  const handleAddTable = async () => {
     if (validateTableData()) {
-      addTable(newTableData.number, parseInt(newTableData.capacity));
+      const promise = addTable(
+        newTableData.number,
+        parseInt(newTableData.capacity)
+      );
       setNewTableData({ number: "", capacity: 4 });
       setErrors({});
       setShowAddModal(false);
+
+      toast.promise(promise, {
+        loading: "Adding table...",
+        success: `Table ${newTableData.number} added successfully!`,
+        error: (err) => err?.message || "Failed to add table",
+      });
     }
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (tableToDelete) {
-      removeTable(tableToDelete.id);
+      const promise = removeTable(tableToDelete.id);
+      const tableName = tableToDelete.name;
       setTableToDelete(null);
       setShowDeleteModal(false);
+
+      toast.promise(promise, {
+        loading: "Deleting table...",
+        success: `Table ${tableName} deleted successfully!`,
+        error: (err) => err?.message || "Failed to delete table",
+      });
     }
   };
 
@@ -68,55 +85,82 @@ const DashboardTables = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-[#3b1a0b]">Tables</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#3b1a0b]">Tables</h2>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-[#cc6600] text-white px-4 py-2 rounded-lg hover:bg-[#b35500] flex items-center gap-2 transition-colors"
+          className="bg-[#cc6600] text-white px-4 py-2 rounded-lg hover:bg-[#b35500] flex items-center justify-center gap-2 transition-colors focus:outline-none w-full sm:w-auto"
         >
           <Plus className="h-4 w-4" />
           Add Table
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {tables.map((table) => (
-          <div
-            key={table.id}
-            className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {table.name}
-              </h3>
-              <Users className="h-5 w-5 text-gray-600" />
-            </div>
-
-            <div className="text-sm text-gray-600 mb-3">
-              <span>{table.seats} seats</span>
-            </div>
-
+      {tables.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-lg shadow-md">
+          <Users className="h-20 w-20 mx-auto text-gray-400 mb-4" />
+          <h3 className="text-2xl font-semibold text-gray-700 mb-2">
+            No Tables Yet
+          </h3>
+          <p className="text-gray-500 mb-6 max-w-md mx-auto">
+            Get started by adding your first table to manage your restaurant
+            seating
+          </p>
+          <Button onClick={() => setShowAddModal(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Your First Table
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {tables.map((table) => (
             <div
-              className={`mb-3 px-2 py-1 rounded text-sm font-medium ${
-                table.status === "available"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
+              key={table.id}
+              className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
             >
-              {table.status === "available" ? "Available" : "Occupied"}
-            </div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {table.name}
+                </h3>
+                <Users className="h-5 w-5 text-gray-600" />
+              </div>
 
-            <button
-              onClick={() => openDeleteModal(table)}
-              className="w-full py-2 px-3 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </button>
-          </div>
-        ))}
-      </div>
+              <div className="text-sm text-gray-600 mb-3">
+                <span>{table.seats} seats</span>
+              </div>
+
+              <div
+                className={`mb-3 px-2 py-1 rounded text-sm font-medium ${
+                  table.status === "available"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
+                {table.status === "available" ? "Available" : "Occupied"}
+              </div>
+
+              <button
+                onClick={() => openDeleteModal(table)}
+                disabled={table.status === "occupied"}
+                className={`w-full py-2 px-3 rounded text-sm transition-colors flex items-center justify-center gap-2 focus:outline-none ${
+                  table.status === "occupied"
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-red-600 text-white hover:bg-red-700"
+                }`}
+                title={
+                  table.status === "occupied"
+                    ? "Cannot delete occupied table"
+                    : "Delete table"
+                }
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Add Table Modal */}
       <Modal

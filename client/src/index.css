@@ -54,10 +54,13 @@ textarea {
 
 /* Enhanced focus states for accessibility */
 button:focus,
-a:focus,
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 2px solid #cc6600;
-  outline-offset: 2px;
+  outline: none;
+}
+
+/* Remove focus outline for links */
+a:focus {
+  outline: none;
 }

@@ -1,12 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import LoginPopup from "./LoginPopup";
+import ContactFormModal from "./ContactFormModal";
 import { useApp } from "../context/AppContext";
+import { useAuth } from "../context/AuthContext";
+import { Menu, X } from "lucide-react";
 
 const Navbar = () => {
   const [active, setActive] = useState("home");
   const [scrolled, setScrolled] = useState(false);
-  const { user, openAuthModal, closeAuthModal, authModal, logout } = useApp();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const {
+    openAuthModal,
+    closeAuthModal,
+    authModal,
+    contactModal,
+    openContactModal,
+    closeContactModal,
+  } = useApp();
+  const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -22,8 +34,8 @@ const Navbar = () => {
     openAuthModal("login");
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 
@@ -39,12 +51,12 @@ const Navbar = () => {
           scrolled
             ? "bg-[#3b1a0b]/10 backdrop-blur-xl shadow-lg border-b border-white/20"
             : "bg-transparent"
-        } h-20 flex items-center justify-between px-6`}
+        } h-20 flex items-center justify-between px-4 sm:px-6 lg:px-8`}
       >
         {/* Logo */}
         <Link
           to="/"
-          className={`text-2xl font-bold transition-colors ${
+          className={`text-xl sm:text-2xl font-bold transition-colors ${
             scrolled
               ? "text-[#3b1a0b] hover:text-[#cc6600]"
               : "text-[#3b1a0b] hover:text-[#cc6600] drop-shadow-lg"
@@ -53,7 +65,7 @@ const Navbar = () => {
           DineDesk
         </Link>
 
-        {/* Menu Links */}
+        {/* Desktop Menu Links */}
         <div className="hidden md:flex gap-8 text-sm font-medium">
           <Link
             to="/"
@@ -109,10 +121,17 @@ const Navbar = () => {
           </Link>
         </div>
 
-        {/* Auth Section */}
-        <div className="flex items-center gap-4">
-          {user ? (
+        {/* Desktop Auth Section */}
+        <div className="hidden md:flex items-center gap-4">
+          {isAuthenticated ? (
             <div className="flex items-center gap-4">
+              <span
+                className={`text-sm ${
+                  scrolled ? "text-[#3b1a0b]" : "text-[#3b1a0b] drop-shadow-lg"
+                }`}
+              >
+                Welcome, {user?.name}
+              </span>
               <Link
                 to="/dashboard"
                 className="px-4 py-2 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-colors font-medium"
@@ -151,13 +170,142 @@ const Navbar = () => {
             </div>
           )}
         </div>
+
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden p-2 text-[#3b1a0b] hover:text-[#cc6600] transition-colors"
+        >
+          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
       </nav>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="fixed top-20 right-0 bottom-0 w-64 bg-white shadow-xl p-6 overflow-y-auto">
+            <div className="flex flex-col gap-4">
+              {/* Mobile Menu Links */}
+              <Link
+                to="/"
+                onClick={() => {
+                  setActive("home");
+                  setMobileMenuOpen(false);
+                }}
+                className={`px-4 py-3 rounded-lg transition-colors ${
+                  active === "home"
+                    ? "bg-[#cc6600] text-white"
+                    : "text-[#3b1a0b] hover:bg-gray-100"
+                }`}
+              >
+                Home
+              </Link>
+              <Link
+                to="/pricing"
+                onClick={() => {
+                  setActive("pricing");
+                  setMobileMenuOpen(false);
+                }}
+                className={`px-4 py-3 rounded-lg transition-colors ${
+                  active === "pricing"
+                    ? "bg-[#cc6600] text-white"
+                    : "text-[#3b1a0b] hover:bg-gray-100"
+                }`}
+              >
+                Pricing
+              </Link>
+              <Link
+                to="/about"
+                onClick={() => {
+                  setActive("about");
+                  setMobileMenuOpen(false);
+                }}
+                className={`px-4 py-3 rounded-lg transition-colors ${
+                  active === "about"
+                    ? "bg-[#cc6600] text-white"
+                    : "text-[#3b1a0b] hover:bg-gray-100"
+                }`}
+              >
+                About Us
+              </Link>
+              <Link
+                to="/setup"
+                onClick={() => {
+                  setActive("setup");
+                  setMobileMenuOpen(false);
+                }}
+                className={`px-4 py-3 rounded-lg transition-colors ${
+                  active === "setup"
+                    ? "bg-[#cc6600] text-white"
+                    : "text-[#3b1a0b] hover:bg-gray-100"
+                }`}
+              >
+                Setup
+              </Link>
+
+              <div className="border-t border-gray-200 my-4" />
+
+              {/* Mobile Auth Section */}
+              {isAuthenticated ? (
+                <>
+                  <div className="px-4 py-2 text-sm text-gray-600">
+                    Welcome, {user?.name}
+                  </div>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-3 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-colors font-medium text-center"
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-4 py-3 text-[#3b1a0b] hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      handleLogin();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-4 py-3 text-[#3b1a0b] hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                  >
+                    Login
+                  </button>
+                  <button
+                    onClick={() => {
+                      openAuthModal("signup");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-4 py-3 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-colors font-medium"
+                  >
+                    Get Started
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <LoginPopup
         isOpen={authModal.isOpen}
         initialMode={authModal.mode}
         onClose={closeAuthModal}
       />
+
+      <ContactFormModal isOpen={contactModal} onClose={closeContactModal} />
     </>
   );
 };

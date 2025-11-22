@@ -107,7 +107,7 @@ router.get('/', getOrdersValidation, getAllOrders);
 router.get('/table/:tableId', tableIdValidation, getOrderByTable);
 router.post('/create', createOrderValidation, createOrder);
 router.post('/:id/add-item', addItemValidation, addItemToOrder);
-router.put('/:id/checkout', checkoutValidation, checkout);
+router.patch('/:id/checkout', checkoutValidation, checkout);
 router.put('/:id/status', updateStatusValidation, updateOrderStatus);
 
 module.exports = router;

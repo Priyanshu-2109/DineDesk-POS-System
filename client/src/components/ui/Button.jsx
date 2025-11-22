@@ -12,18 +12,17 @@ const Button = ({
   ...props
 }) => {
   const baseClasses =
-    "inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2";
+    "inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-0";
 
   const variants = {
-    primary: "bg-[#461a00] text-white hover:bg-[#5c2405] focus:ring-[#461a00]",
+    primary: "bg-[#461a00] text-white hover:bg-[#5c2405]",
     secondary:
-      "bg-white text-[#461a00] border-2 border-[#461a00] hover:bg-gray-50 focus:ring-[#461a00]",
+      "bg-white text-[#461a00] border-2 border-[#461a00] hover:bg-gray-50",
     outline:
-      "bg-transparent text-[#461a00] border border-[#461a00] hover:bg-[#461a00] hover:text-white focus:ring-[#461a00]",
-    ghost:
-      "bg-transparent text-[#461a00] hover:bg-orange-50 focus:ring-[#461a00]",
-    danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-600",
-    destructive: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-600",
+      "bg-transparent text-[#461a00] border border-[#461a00] hover:bg-[#461a00] hover:text-white",
+    ghost: "bg-transparent text-[#461a00] hover:bg-orange-50",
+    danger: "bg-red-600 text-white hover:bg-red-700",
+    destructive: "bg-red-600 text-white hover:bg-red-700",
   };
 
   const sizes = {

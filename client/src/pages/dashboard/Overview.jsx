@@ -1,6 +1,7 @@
 import React from "react";
 import { useApp } from "../../context/AppContext";
 import { useNavigate } from "react-router-dom";
+import SubscriptionInfo from "../../components/SubscriptionInfo";
 
 const Overview = () => {
   const { restaurant } = useApp();
@@ -22,6 +23,7 @@ const Overview = () => {
         </div>
       </div>
 
+      {/* Welcome Message */}
       <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
         <div className="text-center">
           <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -44,6 +46,9 @@ const Overview = () => {
           )}
         </div>
       </div>
+
+      {/* Subscription Information */}
+      <SubscriptionInfo />
     </div>
   );
 };
