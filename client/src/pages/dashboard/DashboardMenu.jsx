@@ -59,63 +59,77 @@ const DashboardMenu = () => {
         />
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left p-4 font-semibold text-[#3b1a0b]">
-                  Item Name
-                </th>
-                <th className="text-left p-4 font-semibold text-[#3b1a0b]">
-                  Category
-                </th>
-                <th className="text-left p-4 font-semibold text-[#3b1a0b]">
-                  Price
-                </th>
-                <th className="text-left p-4 font-semibold text-[#3b1a0b]">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredMenu.map((item) => (
-                <tr
-                  key={item.id}
-                  className="border-b border-gray-100 hover:bg-gray-50"
-                >
-                  <td className="p-4 font-medium text-[#3b1a0b]">
-                    {item.name}
-                  </td>
-                  <td className="p-4 text-gray-600">{item.category}</td>
-                  <td className="p-4 font-medium text-[#3b1a0b]">
-                    ₹{item.price}
-                  </td>
-                  <td className="p-4">
-                    <div className="flex gap-2">
-                      <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                        <Edit3 className="h-4 w-4" />
-                      </button>
-                      <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filteredMenu.length === 0 && (
-                <tr>
-                  <td colSpan="4" className="p-8 text-center text-gray-500">
-                    {searchTerm
-                      ? "No menu items found matching your search."
-                      : "No menu items added yet."}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {menu.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-lg shadow-md">
+          <Search className="h-20 w-20 mx-auto text-gray-400 mb-4" />
+          <h3 className="text-2xl font-semibold text-gray-700 mb-2">
+            No Menu Items Yet
+          </h3>
+          <p className="text-gray-500 mb-6 max-w-md mx-auto">
+            Start building your menu by adding your first item
+          </p>
+          <Button onClick={() => setShowAddModal(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Your First Item
+          </Button>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="text-left p-4 font-semibold text-[#3b1a0b]">
+                    Item Name
+                  </th>
+                  <th className="text-left p-4 font-semibold text-[#3b1a0b]">
+                    Category
+                  </th>
+                  <th className="text-left p-4 font-semibold text-[#3b1a0b]">
+                    Price
+                  </th>
+                  <th className="text-left p-4 font-semibold text-[#3b1a0b]">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredMenu.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="border-b border-gray-100 hover:bg-gray-50"
+                  >
+                    <td className="p-4 font-medium text-[#3b1a0b]">
+                      {item.name}
+                    </td>
+                    <td className="p-4 text-gray-600">{item.category}</td>
+                    <td className="p-4 font-medium text-[#3b1a0b]">
+                      ₹{item.price}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex gap-2">
+                        <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus:outline-none">
+                          <Edit3 className="h-4 w-4" />
+                        </button>
+                        <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus:outline-none">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredMenu.length === 0 && menu.length > 0 && (
+                  <tr>
+                    <td colSpan="4" className="p-8 text-center text-gray-500">
+                      No menu items found matching your search.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Add Item Modal */}
       <Modal

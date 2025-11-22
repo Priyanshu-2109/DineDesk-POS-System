@@ -1,6 +1,7 @@
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const User = require("../models/User");
+const { sendSubscriptionEmail } = require("../utils/emailService");
 
 // @desc    Create payment order
 // @route   POST /api/payment/create-order
@@ -139,8 +140,97 @@ const verifyPayment = async (req, res) => {
       });
     }
 
+    // Define subscription plans with pricing
+    const planDetails = {
+      starter: {
+        amount: 999,
+        currency: "INR",
+        name: "Starter",
+        features: [
+          "Up to 5 tables",
+          "Basic menu management",
+          "Order tracking",
+          "Email support",
+        ],
+      },
+      professional: {
+        amount: 1999,
+        currency: "INR",
+        name: "Professional",
+        features: [
+          "Up to 20 tables",
+          "Advanced menu management",
+          "Order tracking & analytics",
+          "Customer management",
+          "Priority support",
+        ],
+      },
+      enterprise: {
+        amount: 2999,
+        currency: "INR",
+        name: "Enterprise",
+        features: [
+          "Unlimited tables",
+          "Full restaurant management",
+          "Advanced analytics",
+          "Multi-location support",
+          "Dedicated support",
+        ],
+      },
+    };
+
+    const selectedPlan = planDetails[plan];
+    if (!selectedPlan) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid subscription plan",
+      });
+    }
+
+    // Calculate subscription period (1 month or 1 year based on amount)
+    const isYearly = payment.amount >= selectedPlan.amount * 12 * 0.8 * 100; // amount in paise
+    const interval = isYearly ? "year" : "month";
+    const startDate = new Date();
+    const endDate = new Date();
+
+    if (isYearly) {
+      endDate.setFullYear(endDate.getFullYear() + 1);
+    } else {
+      endDate.setMonth(endDate.getMonth() + 1);
+    }
+
+    // Update user subscription
     user.subscription = plan;
+    user.subscriptionDetails = {
+      planId: plan,
+      amount: payment.amount / 100, // Convert from paise to rupees
+      currency: payment.currency.toUpperCase(),
+      interval: interval,
+      startDate: startDate,
+      endDate: endDate,
+      status: "active",
+      paymentId: payment.id,
+      orderId: razorpay_order_id,
+    };
     await user.save();
+
+    // Send subscription confirmation email
+    try {
+      await sendSubscriptionEmail(user.email, {
+        userName: user.name,
+        planName: selectedPlan.name,
+        amount: selectedPlan.amount * (isYearly ? 12 * 0.8 : 1),
+        currency: selectedPlan.currency,
+        interval: interval,
+        startDate: startDate,
+        endDate: endDate,
+        features: selectedPlan.features,
+      });
+      console.log("Subscription confirmation email sent to:", user.email);
+    } catch (emailError) {
+      console.error("Failed to send subscription email:", emailError);
+      // Don't fail the request if email fails
+    }
 
     // Return updated user data
     const updatedUser = user.toObject();
@@ -237,8 +327,97 @@ const getPlans = async (req, res) => {
   }
 };
 
+// @desc    Test email functionality
+// @route   POST /api/payment/test-email
+// @access  Public (for testing)
+const testEmail = async (req, res) => {
+  try {
+    const { email, planId } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email address is required",
+      });
+    }
+
+    // Test subscription data
+    const testData = {
+      userName: "Test User",
+      planName:
+        planId === "professional"
+          ? "Professional"
+          : planId === "enterprise"
+          ? "Enterprise"
+          : "Starter",
+      amount:
+        planId === "professional" ? 1999 : planId === "enterprise" ? 2999 : 999,
+      currency: "INR",
+      interval: "month",
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      features:
+        planId === "professional"
+          ? [
+              "Up to 20 tables",
+              "Advanced menu management",
+              "Order tracking & analytics",
+              "Customer management",
+              "Priority support",
+            ]
+          : planId === "enterprise"
+          ? [
+              "Unlimited tables",
+              "Full restaurant management",
+              "Advanced analytics",
+              "Multi-location support",
+              "Dedicated support",
+            ]
+          : [
+              "Up to 5 tables",
+              "Basic menu management",
+              "Order tracking",
+              "Email support",
+            ],
+    };
+
+    // Send test email
+    const result = await sendSubscriptionEmail(email, testData);
+
+    if (result.success) {
+      res.status(200).json({
+        success: true,
+        message: "Test email sent successfully! Check your inbox.",
+        details: {
+          to: email,
+          plan: testData.planName,
+          messageId: result.messageId,
+        },
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: "Failed to send test email",
+        error: result.error,
+        details: "Make sure EMAIL_USER and EMAIL_PASSWORD are set in .env file",
+      });
+    }
+  } catch (error) {
+    console.error("Test email error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to send test email",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   verifyPayment,
   getPlans,
+  testEmail,
 };

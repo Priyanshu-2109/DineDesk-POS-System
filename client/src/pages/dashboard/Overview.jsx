@@ -1,6 +1,7 @@
 import React from "react";
 import { useApp } from "../../context/AppContext";
 import { useNavigate } from "react-router-dom";
+import SubscriptionInfo from "../../components/SubscriptionInfo";
 
 const Overview = () => {
   const { restaurant } = useApp();
@@ -21,6 +22,9 @@ const Overview = () => {
           })}
         </div>
       </div>
+
+      {/* Subscription Information */}
+      <SubscriptionInfo />
 
       <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
         <div className="text-center">

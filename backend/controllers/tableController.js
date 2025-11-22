@@ -1,6 +1,6 @@
-const { validationResult } = require('express-validator');
-const Table = require('../models/Table');
-const Restaurant = require('../models/Restaurant');
+const { validationResult } = require("express-validator");
+const Table = require("../models/Table");
+const Restaurant = require("../models/Restaurant");
 
 // @desc    Add a new table
 // @route   POST /api/tables/add-table
@@ -12,33 +12,33 @@ const addTable = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors: errors.array()
+        message: "Validation failed",
+        errors: errors.array(),
       });
     }
 
     const { name, capacity } = req.body;
 
-    // Check if user has a restaurant
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    // Check if user has a restaurant, create if doesn't exist
+    let restaurant = await Restaurant.findOne({ owner: req.user._id });
     if (!restaurant) {
-      return res.status(404).json({
-        success: false,
-        message: 'Restaurant not found. Please create restaurant information first.'
+      restaurant = await Restaurant.create({
+        name: `${req.user.name}'s Restaurant`,
+        owner: req.user._id,
       });
     }
 
     // Check if table name already exists in this restaurant
-    const existingTable = await Table.findOne({ 
-      name: name.trim(), 
+    const existingTable = await Table.findOne({
+      name: name.trim(),
       restaurant: restaurant._id,
-      isActive: true 
+      isActive: true,
     });
 
     if (existingTable) {
       return res.status(400).json({
         success: false,
-        message: 'Table with this name already exists in your restaurant'
+        message: "Table with this name already exists in your restaurant",
       });
     }
 
@@ -47,15 +47,15 @@ const addTable = async (req, res) => {
       name: name.trim(),
       capacity: parseInt(capacity),
       restaurant: restaurant._id,
-      owner: req.user._id
+      owner: req.user._id,
     });
 
     // Populate restaurant info in response
-    await table.populate('restaurant', 'name');
+    await table.populate("restaurant", "name");
 
     res.status(201).json({
       success: true,
-      message: 'Table added successfully',
+      message: "Table added successfully",
       table: {
         _id: table._id,
         name: table.name,
@@ -66,25 +66,27 @@ const addTable = async (req, res) => {
         isOccupied: table.isOccupied,
         position: table.position,
         createdAt: table.createdAt,
-        updatedAt: table.updatedAt
-      }
+        updatedAt: table.updatedAt,
+      },
     });
-
   } catch (error) {
-    console.error('Add table error:', error);
-    
+    console.error("Add table error:", error);
+
     // Handle duplicate key error
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
-        message: 'Table with this name already exists in your restaurant'
+        message: "Table with this name already exists in your restaurant",
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Server error during table creation',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message: "Server error during table creation",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -101,30 +103,31 @@ const deleteTable = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors: errors.array()
+        message: "Validation failed",
+        errors: errors.array(),
       });
     }
 
     if (!id) {
       return res.status(400).json({
         success: false,
-        message: 'Table ID is required'
+        message: "Table ID is required",
       });
     }
 
     // Find table and ensure it belongs to the current user
     // NOTE: do not restrict by isActive here so previously soft-deleted
     // tables can still be hard-deleted. Just ensure ownership.
-    const table = await Table.findOne({ 
-      _id: id, 
-      owner: req.user._id
+    const table = await Table.findOne({
+      _id: id,
+      owner: req.user._id,
     });
 
     if (!table) {
       return res.status(404).json({
         success: false,
-        message: 'Table not found or you do not have permission to delete this table'
+        message:
+          "Table not found or you do not have permission to delete this table",
       });
     }
 
@@ -132,7 +135,7 @@ const deleteTable = async (req, res) => {
     if (table.isOccupied) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot delete table that is currently occupied'
+        message: "Cannot delete table that is currently occupied",
       });
     }
 
@@ -141,20 +144,22 @@ const deleteTable = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Table permanently deleted successfully',
+      message: "Table permanently deleted successfully",
       deletedTable: {
         _id: table._id,
         name: table.name,
-        capacity: table.capacity
-      }
+        capacity: table.capacity,
+      },
     });
-
   } catch (error) {
-    console.error('Delete table error:', error);
+    console.error("Delete table error:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error during table deletion',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message: "Server error during table deletion",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -169,29 +174,31 @@ const getTables = async (req, res) => {
     if (!restaurant) {
       return res.status(404).json({
         success: false,
-        message: 'Restaurant not found'
+        message: "Restaurant not found",
       });
     }
 
     // Get all active tables for this restaurant
-    const tables = await Table.find({ 
-      restaurant: restaurant._id, 
+    const tables = await Table.find({
+      restaurant: restaurant._id,
       owner: req.user._id,
-      isActive: true 
-    }).populate('restaurant', 'name');
+      isActive: true,
+    }).populate("restaurant", "name");
 
     res.status(200).json({
       success: true,
       count: tables.length,
-      tables
+      tables,
     });
-
   } catch (error) {
-    console.error('Get tables error:', error);
+    console.error("Get tables error:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error while fetching tables',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message: "Server error while fetching tables",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -199,5 +206,5 @@ const getTables = async (req, res) => {
 module.exports = {
   addTable,
   deleteTable,
-  getTables
+  getTables,
 };

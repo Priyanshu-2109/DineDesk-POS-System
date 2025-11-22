@@ -13,6 +13,7 @@ const LoginPopup = ({ isOpen, onClose, initialMode = "login" }) => {
   const [isLogin, setIsLogin] = useState(modeFromCtx === "login");
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -22,6 +23,7 @@ const LoginPopup = ({ isOpen, onClose, initialMode = "login" }) => {
   useEffect(() => {
     if (!effectiveOpen) {
       setError("");
+      setSuccessMessage("");
       setIsSubmitting(false);
     }
   }, [effectiveOpen]);
@@ -31,6 +33,7 @@ const LoginPopup = ({ isOpen, onClose, initialMode = "login" }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
     setIsSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
@@ -65,12 +68,14 @@ const LoginPopup = ({ isOpen, onClose, initialMode = "login" }) => {
           // After successful signup, switch to login mode
           setIsLogin(true);
           setError("");
-          // Show success message and clear form
+          // Clear form
           const form = e.currentTarget;
           form.reset();
-          alert(
+          // Show success message
+          setSuccessMessage(
             "Account created successfully! Please log in with your credentials."
           );
+          setIsSubmitting(false);
           return;
         }
       }
@@ -133,6 +138,11 @@ const LoginPopup = ({ isOpen, onClose, initialMode = "login" }) => {
             {error && (
               <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
                 {error}
+              </div>
+            )}
+            {successMessage && (
+              <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm">
+                {successMessage}
               </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-3">

@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { useAuth } from "../context/AuthContext";
 import PaymentModal from "../components/PaymentModal";
+import paymentService from "../utils/paymentService";
 import {
   ArrowRight,
   Check,
@@ -18,6 +19,8 @@ const Home = () => {
   const [isYearly, setIsYearly] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Function to calculate yearly price with 20% discount
   const calculateYearlyPrice = (monthlyPrice) => {
@@ -28,6 +31,78 @@ const Home = () => {
   const getDisplayPrice = (monthlyPrice) => {
     return isYearly ? calculateYearlyPrice(monthlyPrice) : monthlyPrice;
   };
+
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  const fetchPlans = async () => {
+    setLoading(true);
+    try {
+      const result = await paymentService.getPlans();
+      if (result.success) {
+        setPlans(result.plans);
+      } else {
+        // Fallback to default plans if API fails
+        setPlans(getDefaultPlans());
+      }
+    } catch (error) {
+      console.error("Error fetching plans:", error);
+      setPlans(getDefaultPlans());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDefaultPlans = () => [
+    {
+      id: "starter",
+      name: "Starter",
+      price: 999,
+      currency: "INR",
+      interval: "month",
+      description: "Perfect for small restaurants and cafes",
+      features: [
+        "Up to 10 tables",
+        "Basic reporting",
+        "Email support",
+        "Mobile app access",
+      ],
+      popular: false,
+    },
+    {
+      id: "professional",
+      name: "Professional",
+      price: 2499,
+      currency: "INR",
+      interval: "month",
+      description: "Ideal for growing restaurants",
+      features: [
+        "Up to 50 tables",
+        "Advanced analytics",
+        "Priority support",
+        "Inventory management",
+        "Multi-location support",
+      ],
+      popular: true,
+    },
+    {
+      id: "enterprise",
+      name: "Enterprise",
+      price: 4999,
+      currency: "INR",
+      interval: "month",
+      description: "For large restaurant chains",
+      features: [
+        "Unlimited tables",
+        "Custom integrations",
+        "Dedicated support",
+        "White-label options",
+        "API access",
+      ],
+      popular: false,
+    },
+  ];
 
   const handleSelectPlan = (plan) => {
     if (!isAuthenticated) {
@@ -73,56 +148,6 @@ const Home = () => {
       title: "Multi-Device Support",
       desc: "Works seamlessly across tablets, phones, and desktop",
       icon: Smartphone,
-    },
-  ];
-
-  const pricingPlans = [
-    {
-      id: "starter",
-      name: "Starter",
-      price: 999,
-      period: "month",
-      interval: "month",
-      description: "Perfect for small restaurants and cafes",
-      features: [
-        "Up to 10 tables",
-        "Basic reporting",
-        "Email support",
-        "Mobile app access",
-      ],
-      popular: false,
-    },
-    {
-      id: "professional",
-      name: "Professional",
-      price: 2499,
-      period: "month",
-      interval: "month",
-      description: "Ideal for growing restaurants",
-      features: [
-        "Up to 50 tables",
-        "Advanced analytics",
-        "Priority support",
-        "Inventory management",
-        "Multi-location support",
-      ],
-      popular: true,
-    },
-    {
-      id: "enterprise",
-      name: "Enterprise",
-      price: 4999,
-      period: "month",
-      interval: "month",
-      description: "For large restaurant chains",
-      features: [
-        "Unlimited tables",
-        "Custom integrations",
-        "Dedicated support",
-        "White-label options",
-        "API access",
-      ],
-      popular: false,
     },
   ];
 
@@ -252,75 +277,81 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <div
-                key={index}
-                className={`bg-white rounded-2xl p-8 relative transition-all duration-300 hover:shadow-xl ${
-                  plan.popular
-                    ? "border-2 border-[#cc6600] scale-105"
-                    : "border border-gray-200"
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-[#cc6600] text-white px-4 py-1 rounded-full text-sm font-medium">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-[#3b1a0b] mb-4">
-                    {plan.name}
-                  </h3>
-                  <div className="flex items-center justify-center flex-col">
-                    <div className="flex items-center justify-center">
-                      <span className="text-4xl font-bold text-[#3b1a0b]">
-                        ₹{getDisplayPrice(plan.price).toLocaleString("en-IN")}
-                      </span>
-                      <span className="text-gray-500 ml-2">
-                        /{isYearly ? "year" : plan.period}
-                      </span>
-                    </div>
-                    {isYearly && (
-                      <div className="text-sm text-green-600 mt-2 font-medium">
-                        ₹
-                        {Math.round(
-                          getDisplayPrice(plan.price) / 12
-                        ).toLocaleString("en-IN")}
-                        /month when paid yearly
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center">
-                      <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  onClick={() => handleSelectPlan(plan)}
-                  className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 focus:outline-none focus:ring-0 ${
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#cc6600]"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {plans.map((plan, index) => (
+                <div
+                  key={plan.id || index}
+                  className={`bg-white rounded-2xl p-8 relative transition-all duration-300 hover:shadow-xl ${
                     plan.popular
-                      ? "bg-[#cc6600] text-white hover:bg-[#b35500]"
-                      : "border-2 border-[#cc6600] text-[#cc6600] hover:bg-[#cc6600] hover:text-white"
+                      ? "border-2 border-[#cc6600] scale-105"
+                      : "border border-gray-200"
                   }`}
                 >
-                  {!isAuthenticated
-                    ? "Login to Subscribe"
-                    : user?.subscription === plan.id
-                    ? "Current Plan"
-                    : "Subscribe Now"}
-                </button>
-              </div>
-            ))}
-          </div>
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-[#cc6600] text-white px-4 py-1 rounded-full text-sm font-medium">
+                        Most Popular
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="text-center mb-8">
+                    <h3 className="text-2xl font-bold text-[#3b1a0b] mb-4">
+                      {plan.name}
+                    </h3>
+                    <div className="flex items-center justify-center flex-col">
+                      <div className="flex items-center justify-center">
+                        <span className="text-4xl font-bold text-[#3b1a0b]">
+                          ₹{getDisplayPrice(plan.price).toLocaleString("en-IN")}
+                        </span>
+                        <span className="text-gray-500 ml-2">
+                          /{isYearly ? "year" : plan.interval || "month"}
+                        </span>
+                      </div>
+                      {isYearly && (
+                        <div className="text-sm text-green-600 mt-2 font-medium">
+                          ₹
+                          {Math.round(
+                            getDisplayPrice(plan.price) / 12
+                          ).toLocaleString("en-IN")}
+                          /month when paid yearly
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <ul className="space-y-3 mb-8">
+                    {plan.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-center">
+                        <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                        <span className="text-gray-700">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => handleSelectPlan(plan)}
+                    className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 focus:outline-none focus:ring-0 ${
+                      plan.popular
+                        ? "bg-[#cc6600] text-white hover:bg-[#b35500]"
+                        : "border-2 border-[#cc6600] text-[#cc6600] hover:bg-[#cc6600] hover:text-white"
+                    }`}
+                  >
+                    {!isAuthenticated
+                      ? "Login to Subscribe"
+                      : user?.subscription === plan.id
+                      ? "Current Plan"
+                      : "Subscribe Now"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="text-center mt-12">
             <Link
