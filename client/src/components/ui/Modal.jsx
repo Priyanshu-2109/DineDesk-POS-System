@@ -30,7 +30,7 @@ const Modal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay */}
       {overlay && (
         <div
@@ -41,13 +41,13 @@ const Modal = ({
 
       {/* Modal */}
       <div
-        className={`relative bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 w-full ${sizes[size]} ${className}`}
+        className={`relative bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 w-full ${sizes[size]} ${className} max-h-[90vh] overflow-y-auto`}
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-gray-200/30">
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200/30 sticky top-0 bg-white/90 backdrop-blur-lg z-10">
             {title && (
-              <h2 className="text-xl font-semibold text-[#3b1a0b]">{title}</h2>
+              <h2 className="text-lg sm:text-xl font-semibold text-[#3b1a0b]">{title}</h2>
             )}
             {showCloseButton && (
               <Button
@@ -63,7 +63,7 @@ const Modal = ({
         )}
 
         {/* Content */}
-        <div className="p-6">{children}</div>
+        <div className="p-4 sm:p-6">{children}</div>
       </div>
     </div>
   );

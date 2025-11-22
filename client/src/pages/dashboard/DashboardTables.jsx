@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Plus, Trash2, Users } from "lucide-react";
+import toast from "react-hot-toast";
 import { useApp } from "../../context/AppContext";
 import Modal from "../../components/ui/Modal";
 import Button from "../../components/ui/Button";
@@ -40,20 +41,36 @@ const DashboardTables = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleAddTable = () => {
+  const handleAddTable = async () => {
     if (validateTableData()) {
-      addTable(newTableData.number, parseInt(newTableData.capacity));
+      const promise = addTable(
+        newTableData.number,
+        parseInt(newTableData.capacity)
+      );
       setNewTableData({ number: "", capacity: 4 });
       setErrors({});
       setShowAddModal(false);
+
+      toast.promise(promise, {
+        loading: "Adding table...",
+        success: `Table ${newTableData.number} added successfully!`,
+        error: (err) => err?.message || "Failed to add table",
+      });
     }
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (tableToDelete) {
-      removeTable(tableToDelete.id);
+      const promise = removeTable(tableToDelete.id);
+      const tableName = tableToDelete.name;
       setTableToDelete(null);
       setShowDeleteModal(false);
+
+      toast.promise(promise, {
+        loading: "Deleting table...",
+        success: `Table ${tableName} deleted successfully!`,
+        error: (err) => err?.message || "Failed to delete table",
+      });
     }
   };
 
@@ -68,12 +85,12 @@ const DashboardTables = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-[#3b1a0b]">Tables</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#3b1a0b]">Tables</h2>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-[#cc6600] text-white px-4 py-2 rounded-lg hover:bg-[#b35500] flex items-center gap-2 transition-colors focus:outline-none"
+          className="bg-[#cc6600] text-white px-4 py-2 rounded-lg hover:bg-[#b35500] flex items-center justify-center gap-2 transition-colors focus:outline-none w-full sm:w-auto"
         >
           <Plus className="h-4 w-4" />
           Add Table
@@ -96,7 +113,7 @@ const DashboardTables = () => {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {tables.map((table) => (
             <div
               key={table.id}
@@ -125,7 +142,17 @@ const DashboardTables = () => {
 
               <button
                 onClick={() => openDeleteModal(table)}
-                className="w-full py-2 px-3 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors flex items-center justify-center gap-2 focus:outline-none"
+                disabled={table.status === "occupied"}
+                className={`w-full py-2 px-3 rounded text-sm transition-colors flex items-center justify-center gap-2 focus:outline-none ${
+                  table.status === "occupied"
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-red-600 text-white hover:bg-red-700"
+                }`}
+                title={
+                  table.status === "occupied"
+                    ? "Cannot delete occupied table"
+                    : "Delete table"
+                }
               >
                 <Trash2 className="h-4 w-4" />
                 Delete

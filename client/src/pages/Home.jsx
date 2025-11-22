@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { useAuth } from "../context/AuthContext";
 import PaymentModal from "../components/PaymentModal";
+import WelcomeModal from "../components/WelcomeModal";
 import paymentService from "../utils/paymentService";
 import {
   ArrowRight,
@@ -404,6 +405,9 @@ const Home = () => {
         plan={selectedPlan?.id}
         planDetails={selectedPlan}
       />
+
+      {/* Welcome Modal */}
+      <WelcomeModal />
     </div>
   );
 };

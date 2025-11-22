@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 const LoginPopup = ({ isOpen, onClose, initialMode = "login" }) => {
   const { authModal } = useApp();
@@ -59,6 +60,7 @@ const LoginPopup = ({ isOpen, onClose, initialMode = "login" }) => {
       if (isLogin) {
         result = await login(email, password);
         if (result.success) {
+          toast.success("Welcome back! Redirecting to dashboard...");
           onClose && onClose();
           navigate("/dashboard");
         }
@@ -72,6 +74,7 @@ const LoginPopup = ({ isOpen, onClose, initialMode = "login" }) => {
           const form = e.currentTarget;
           form.reset();
           // Show success message
+          toast.success("Account created successfully! Please log in.");
           setSuccessMessage(
             "Account created successfully! Please log in with your credentials."
           );

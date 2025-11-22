@@ -44,7 +44,7 @@ const addItem = async (req, res) => {
     // Create new menu item
     const menuItem = await MenuItem.create({
       item_name: item_name.trim(),
-      category: category.toLowerCase(),
+      category: category.trim(),
       price: parseFloat(price),
       restaurant: restaurant._id,
       owner: req.user._id,
@@ -140,7 +140,7 @@ const editItem = async (req, res) => {
 
     // Update fields
     if (item_name) menuItem.item_name = item_name.trim();
-    if (category) menuItem.category = category.toLowerCase();
+    if (category) menuItem.category = category.trim();
     if (price !== undefined) menuItem.price = parseFloat(price);
     if (isAvailable !== undefined) menuItem.isAvailable = Boolean(isAvailable);
 

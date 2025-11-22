@@ -14,6 +14,7 @@ const menuRoutes = require("./routes/menuRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const billRoutes = require("./routes/billRoutes");
 
 // Connect to database
 connectDB();
@@ -59,6 +60,8 @@ app.use("/api/tables", tableRoutes);
 app.use("/api/menu", menuRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/bill", billRoutes);
+app.use("/api/bill", billRoutes);
 
 // Handle undefined routes
 app.all("*", (req, res) => {

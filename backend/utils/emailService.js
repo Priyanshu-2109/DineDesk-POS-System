@@ -526,8 +526,42 @@ DineDesk - Modern POS for Restaurants
   }
 };
 
+// Generic send email function with attachment support
+const sendEmail = async (to, subject, text, html, attachments = []) => {
+  try {
+    console.log(`Sending email to: ${to}`);
+    const transporter = createTransporter();
+
+    const mailOptions = {
+      from: `"DineDesk POS" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      text,
+      html,
+      attachments,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent successfully:", info.messageId);
+
+    return {
+      success: true,
+      messageId: info.messageId,
+      message: "Email sent successfully",
+    };
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return {
+      success: false,
+      error: error.message,
+      message: "Failed to send email",
+    };
+  }
+};
+
 module.exports = {
   sendOrderReceipt,
   sendSubscriptionEmail,
   testEmailConfig,
+  sendEmail,
 };

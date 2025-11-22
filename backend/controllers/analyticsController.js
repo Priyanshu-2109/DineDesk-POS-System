@@ -46,9 +46,9 @@ exports.getDashboardAnalytics = async (req, res) => {
       {
         $group: {
           _id: null,
-          totalRevenue: { $sum: "$total" },
+          totalRevenue: { $sum: "$totalAmount" },
           orderCount: { $sum: 1 },
-          averageOrder: { $avg: "$total" },
+          averageOrder: { $avg: "$totalAmount" },
         },
       },
     ]);
@@ -70,7 +70,7 @@ exports.getDashboardAnalytics = async (req, res) => {
       {
         $group: {
           _id: null,
-          totalRevenue: { $sum: "$total" },
+          totalRevenue: { $sum: "$totalAmount" },
         },
       },
     ]);
@@ -123,7 +123,7 @@ exports.getDashboardAnalytics = async (req, res) => {
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          revenue: { $sum: "$total" },
+          revenue: { $sum: "$totalAmount" },
           orders: { $sum: 1 },
         },
       },
@@ -153,7 +153,7 @@ exports.getDashboardAnalytics = async (req, res) => {
           _id: "$table",
           tableName: { $first: "$tableInfo.name" },
           totalOrders: { $sum: 1 },
-          totalRevenue: { $sum: "$total" },
+          totalRevenue: { $sum: "$totalAmount" },
         },
       },
       { $sort: { totalRevenue: -1 } },
@@ -173,7 +173,7 @@ exports.getDashboardAnalytics = async (req, res) => {
         $group: {
           _id: { $hour: "$createdAt" },
           orderCount: { $sum: 1 },
-          revenue: { $sum: "$total" },
+          revenue: { $sum: "$totalAmount" },
         },
       },
       { $sort: { _id: 1 } },
@@ -293,9 +293,9 @@ exports.getSalesReport = async (req, res) => {
       {
         $group: {
           _id: { $dateToString: { format: groupFormat, date: "$createdAt" } },
-          totalRevenue: { $sum: "$total" },
+          totalRevenue: { $sum: "$totalAmount" },
           orderCount: { $sum: 1 },
-          averageOrder: { $avg: "$total" },
+          averageOrder: { $avg: "$totalAmount" },
         },
       },
       { $sort: { _id: 1 } },
@@ -457,8 +457,8 @@ exports.getCustomerInsights = async (req, res) => {
         $group: {
           _id: "$customerEmail",
           visitCount: { $sum: 1 },
-          totalSpent: { $sum: "$total" },
-          averageSpent: { $avg: "$total" },
+          totalSpent: { $sum: "$totalAmount" },
+          averageSpent: { $avg: "$totalAmount" },
           lastVisit: { $max: "$createdAt" },
         },
       },
