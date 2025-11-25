@@ -36,142 +36,85 @@ const WelcomeModal = () => {
 
   if (!isOpen) return null;
 
-  const benefits = [
-    {
-      icon: <Zap className="h-6 w-6 text-[#cc6600]" />,
-      title: "Lightning Fast Orders",
-      description: "Process orders in seconds with our intuitive interface",
-    },
-    {
-      icon: <TrendingUp className="h-6 w-6 text-[#cc6600]" />,
-      title: "Real-time Analytics",
-      description: "Track sales, revenue, and performance with live dashboards",
-    },
-    {
-      icon: <Shield className="h-6 w-6 text-[#cc6600]" />,
-      title: "Secure & Reliable",
-      description: "Your data is protected with enterprise-grade security",
-    },
-    {
-      icon: <Smartphone className="h-6 w-6 text-[#cc6600]" />,
-      title: "Cloud-Based Access",
-      description: "Manage your restaurant from anywhere, anytime",
-    },
-  ];
-
   return (
-    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slide-up">
+    <div className="fixed bottom-6 right-6 z-[100] animate-slide-up">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-96 border-2 border-gray-200 overflow-hidden">
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 z-10 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-3 right-3 z-10 text-gray-400 hover:text-gray-600 transition-colors bg-white rounded-full p-1 hover:bg-gray-100"
         >
-          <X className="h-6 w-6" />
+          <X className="h-5 w-5" />
         </button>
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#cc6600] to-[#b35500] text-white px-8 py-10 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="bg-white/20 p-4 rounded-full backdrop-blur-sm">
-              <CheckCircle className="h-12 w-12 text-white" />
+        <div className="bg-gradient-to-r from-[#cc6600] to-[#b35500] text-white px-6 py-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+              <CheckCircle className="h-6 w-6 text-white" />
             </div>
+            <h1 className="text-xl font-bold">Welcome to DineDesk!</h1>
           </div>
-          <h1 className="text-3xl font-bold mb-2">Welcome to DineDesk!</h1>
-          <p className="text-white/90 text-lg">
+          <p className="text-white/90 text-sm">
             Your Complete Restaurant Management Solution
           </p>
         </div>
 
         {/* Content */}
-        <div className="px-8 py-6 max-h-[50vh] overflow-y-auto">
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Why DineDesk is Perfect for Your Restaurant
-            </h2>
-            <p className="text-gray-600 mb-6">
-              DineDesk streamlines your restaurant operations with powerful
-              features designed to increase efficiency, boost revenue, and
-              enhance customer satisfaction.
+        <div className="px-6 py-5 max-h-96 overflow-y-auto">
+          <p className="text-gray-700 text-sm mb-4">
+            DineDesk streamlines your restaurant operations with powerful
+            features designed to boost efficiency and revenue.
+          </p>
+
+          {/* Key Features */}
+          <div className="space-y-2.5 mb-5">
+            <div className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-gray-700">
+                Table & Order Management
+              </span>
+            </div>
+            <div className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-gray-700">Menu Customization</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-gray-700">Real-time Analytics</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-gray-700">Payment Processing</span>
+            </div>
+          </div>
+
+          {/* CTA Box */}
+          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 p-3 rounded-lg">
+            <p className="text-xs text-gray-700 mb-2 font-medium">
+              🎉 Get started now and experience seamless restaurant management!
             </p>
-          </div>
-
-          {/* Benefits Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {benefits.map((benefit, index) => (
-              <div
-                key={index}
-                className="flex gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex-shrink-0 mt-1">{benefit.icon}</div>
-                <div>
-                  <h3 className="font-semibold text-gray-800 mb-1">
-                    {benefit.title}
-                  </h3>
-                  <p className="text-sm text-gray-600">{benefit.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Additional Features */}
-          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-l-4 border-[#cc6600] p-4 rounded-r-lg mb-6">
-            <h3 className="font-semibold text-gray-800 mb-2">
-              What's Included:
-            </h3>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span>Table & Order Management</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span>Menu Customization with Categories</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span>Payment Processing & Checkout</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span>Business Analytics & Reports</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span>Email Bills & Notifications</span>
-              </li>
-            </ul>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-6 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
-          <Button
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-2">
+          <button
             onClick={handleDontShowAgain}
-            variant="secondary"
-            className="flex-1"
+            className="flex-1 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
           >
             Don't Show Again
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={handleClose}
-            className="flex-1 bg-gradient-to-r from-[#cc6600] to-[#b35500] hover:from-[#b35500] hover:to-[#a04000]"
+            className="flex-1 px-3 py-2 text-sm font-semibold bg-gradient-to-r from-[#cc6600] to-[#b35500] hover:from-[#b35500] hover:to-[#a04000] text-white rounded-lg transition-all shadow-sm"
           >
             Get Started
-          </Button>
+          </button>
         </div>
       </div>
 
       <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
         @keyframes slide-up {
           from {
             transform: translateY(20px);
@@ -181,10 +124,6 @@ const WelcomeModal = () => {
             transform: translateY(0);
             opacity: 1;
           }
-        }
-
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
         }
 
         .animate-slide-up {

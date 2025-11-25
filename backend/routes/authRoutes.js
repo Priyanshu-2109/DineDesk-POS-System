@@ -1,62 +1,91 @@
-const express = require('express');
-const { body } = require('express-validator');
+const express = require("express");
+const { body } = require("express-validator");
 const {
   signup,
   login,
   getMe,
   logout,
-  setSubscription
-} = require('../controllers/authController');
-const { protect } = require('../middleware/auth');
+  setSubscription,
+  forgotPassword,
+  resetPassword,
+} = require("../controllers/authController");
+const { protect } = require("../middleware/auth");
 
 const router = express.Router();
 
 // Validation rules
 const signupValidation = [
-  body('name')
+  body("name")
     .trim()
     .isLength({ min: 2, max: 50 })
-    .withMessage('Name must be between 2 and 50 characters'),
-  
-  body('email')
+    .withMessage("Name must be between 2 and 50 characters"),
+
+  body("email")
     .isEmail()
     .normalizeEmail()
-    .withMessage('Please provide a valid email'),
-  
-  body('password')
+    .withMessage("Please provide a valid email"),
+
+  body("password")
     .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long')
+    .withMessage("Password must be at least 6 characters long")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number')
+    .withMessage(
+      "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+    ),
   // Note: subscription is set only by owner when they purchase; do not accept at signup
 ];
 
 const loginValidation = [
-  body('email')
+  body("email")
     .isEmail()
     .normalizeEmail()
-    .withMessage('Please provide a valid email'),
-  
-  body('password')
-    .notEmpty()
-    .withMessage('Password is required')
+    .withMessage("Please provide a valid email"),
+
+  body("password").notEmpty().withMessage("Password is required"),
 ];
 
 // Subscription update validation
 const subscriptionValidation = [
-  body('subscription')
-    .isIn(['starter', 'professional', 'enterprise'])
-    .withMessage('Subscription must be starter, professional, or enterprise')
+  body("subscription")
+    .isIn(["starter", "professional", "enterprise"])
+    .withMessage("Subscription must be starter, professional, or enterprise"),
+];
+
+// Forgot password validation
+const forgotPasswordValidation = [
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Please provide a valid email"),
+];
+
+// Reset password validation
+const resetPasswordValidation = [
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Please provide a valid email"),
+
+  body("otp")
+    .isLength({ min: 6, max: 6 })
+    .isNumeric()
+    .withMessage("OTP must be a 6-digit number"),
+
+  body("newPassword")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters long"),
 ];
 
 // Public routes
-router.post('/signup', signupValidation, signup);
-router.post('/login', loginValidation, login);
+router.post("/signup", signupValidation, signup);
+router.post("/login", loginValidation, login);
+router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
+router.post("/reset-password", resetPasswordValidation, resetPassword);
 
 // Protected routes
-router.get('/me', protect, getMe);
-router.post('/logout', protect, logout);
+router.get("/me", protect, getMe);
+router.post("/logout", protect, logout);
 // Update subscription for the authenticated user
-router.put('/subscription', protect, subscriptionValidation, setSubscription);
+router.put("/subscription", protect, subscriptionValidation, setSubscription);
 
 module.exports = router;

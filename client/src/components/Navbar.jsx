@@ -66,7 +66,7 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop Menu Links */}
-        <div className="hidden md:flex gap-8 text-sm font-medium">
+        <div className="hidden md:flex gap-8 text-base font-medium">
           <Link
             to="/"
             onClick={() => setActive("home")}
@@ -126,7 +126,7 @@ const Navbar = () => {
           {isAuthenticated ? (
             <div className="flex items-center gap-4">
               <span
-                className={`text-sm ${
+                className={`text-base ${
                   scrolled ? "text-[#3b1a0b]" : "text-[#3b1a0b] drop-shadow-lg"
                 }`}
               >
@@ -134,13 +134,13 @@ const Navbar = () => {
               </span>
               <Link
                 to="/dashboard"
-                className="px-4 py-2 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-colors font-medium"
+                className="px-4 py-2 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-colors font-medium text-base"
               >
                 Dashboard
               </Link>
               <button
                 onClick={handleLogout}
-                className={`px-4 py-2 transition-colors font-medium ${
+                className={`px-4 py-2 transition-colors font-medium text-base ${
                   scrolled
                     ? "text-[#3b1a0b] hover:text-[#cc6600]"
                     : "text-[#3b1a0b] hover:text-[#cc6600] drop-shadow-lg"
@@ -153,7 +153,7 @@ const Navbar = () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleLogin}
-                className={`px-4 py-2 transition-colors font-medium ${
+                className={`px-4 py-2 transition-colors font-medium text-base ${
                   scrolled
                     ? "text-[#3b1a0b] hover:text-[#cc6600]"
                     : "text-[#3b1a0b]  hover:text-[#cc6600] drop-shadow-lg"
@@ -163,7 +163,7 @@ const Navbar = () => {
               </button>
               <button
                 onClick={() => openAuthModal("signup")}
-                className="px-6 py-2 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-colors font-medium shadow-lg"
+                className="px-6 py-2 bg-[#cc6600] text-white rounded-lg hover:bg-[#b35500] transition-colors font-medium shadow-lg text-base"
               >
                 Get Started
               </button>
@@ -176,15 +176,19 @@ const Navbar = () => {
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="md:hidden p-2 text-[#3b1a0b] hover:text-[#cc6600] transition-colors"
         >
-          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          {mobileMenuOpen ? (
+            <X className="h-6 w-6" />
+          ) : (
+            <Menu className="h-6 w-6" />
+          )}
         </button>
       </nav>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
           <div className="fixed top-20 right-0 bottom-0 w-64 bg-white shadow-xl p-6 overflow-y-auto">

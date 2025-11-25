@@ -105,7 +105,7 @@ const DashboardOrders = () => {
   const addOrder = async () => {
     if (selectedTable && selectedItems.length > 0) {
       const table = tables.find((t) => t.id === selectedTable);
-      
+
       try {
         let orderId;
 
@@ -216,7 +216,9 @@ const DashboardOrders = () => {
     try {
       // Here you can add logic to send email bill if needed
       if (sendBill && customerEmail) {
-        console.log(`Sending bill to: ${customerEmail} for Table ${table?.name}`);
+        console.log(
+          `Sending bill to: ${customerEmail} for Table ${table?.name}`
+        );
         // Add your email sending logic here
       }
 
@@ -261,7 +263,9 @@ const DashboardOrders = () => {
         <>
           {/* All Tables Grid */}
           <div className="space-y-4">
-            <h3 className="text-base sm:text-lg font-semibold text-[#3b1a0b]">All Tables</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-[#3b1a0b]">
+              All Tables
+            </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
               {tables.map((table) => {
                 const tableOrders = getTableOrders(table.id);
@@ -592,17 +596,23 @@ const DashboardOrders = () => {
                                 {quantity}
                               </div>
                             )}
-                            <div className={`font-semibold text-sm mb-1 line-clamp-1 ${
-                              isOutOfStock ? "text-gray-500" : "text-gray-900"
-                            }`}>
+                            <div
+                              className={`font-semibold text-sm mb-1 line-clamp-1 ${
+                                isOutOfStock ? "text-gray-500" : "text-gray-900"
+                              }`}
+                            >
                               {item.name}
                             </div>
                             <div className="text-xs text-gray-600 mb-2 line-clamp-1">
                               {item.category}
                             </div>
-                            <div className={`font-bold text-base ${
-                              isOutOfStock ? "text-gray-400" : "text-[#cc6600]"
-                            }`}>
+                            <div
+                              className={`font-bold text-base ${
+                                isOutOfStock
+                                  ? "text-gray-400"
+                                  : "text-[#cc6600]"
+                              }`}
+                            >
                               ₹{item.price}
                             </div>
                           </div>
@@ -771,7 +781,9 @@ const DashboardOrders = () => {
                             <h2 className="text-2xl font-bold text-gray-900 mb-1">
                               {table?.name}
                             </h2>
-                            <p className="text-sm text-gray-600">Table Order Details</p>
+                            <p className="text-sm text-gray-600">
+                              Table Order Details
+                            </p>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold border border-blue-200">
@@ -783,19 +795,26 @@ const DashboardOrders = () => {
                               {tableOrders.reduce(
                                 (total, order) => total + order.items.length,
                                 0
-                              )} Items
+                              )}{" "}
+                              Items
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center justify-between bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-3">
-                          <span className="text-sm font-semibold text-gray-700">Total Amount</span>
-                          <span className="text-2xl font-bold text-[#cc6600]">₹{tableTotal}</span>
+                          <span className="text-sm font-semibold text-gray-700">
+                            Total Amount
+                          </span>
+                          <span className="text-2xl font-bold text-[#cc6600]">
+                            ₹{tableTotal}
+                          </span>
                         </div>
                       </div>
 
                       {/* Order Items List */}
                       <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                        <h3 className="text-sm font-semibold text-gray-700 mb-3">Order Items</h3>
+                        <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                          Order Items
+                        </h3>
                         <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
                           {tableOrders.map((order) =>
                             order.items.map((item, index) => (
@@ -884,7 +903,9 @@ const DashboardOrders = () => {
                             <h2 className="text-xl font-bold text-gray-900 mb-1">
                               Checkout
                             </h2>
-                            <p className="text-sm text-gray-600">{table?.name} • {table?.seats} Seats</p>
+                            <p className="text-sm text-gray-600">
+                              {table?.name} • {table?.seats} Seats
+                            </p>
                           </div>
                           <div className="bg-green-100 text-green-700 p-2 rounded-lg">
                             <CreditCard className="h-6 w-6" />
@@ -892,8 +913,12 @@ const DashboardOrders = () => {
                         </div>
                         <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-semibold text-gray-700">Total Amount</span>
-                            <span className="text-2xl font-bold text-green-600">₹{tableTotal}</span>
+                            <span className="text-sm font-semibold text-gray-700">
+                              Total Amount
+                            </span>
+                            <span className="text-2xl font-bold text-green-600">
+                              ₹{tableTotal}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -958,7 +983,9 @@ const DashboardOrders = () => {
                                 type="email"
                                 id="customerEmail"
                                 value={customerEmail}
-                                onChange={(e) => setCustomerEmail(e.target.value)}
+                                onChange={(e) =>
+                                  setCustomerEmail(e.target.value)
+                                }
                                 placeholder="customer@example.com"
                                 className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#cc6600] focus:border-transparent"
                               />
@@ -974,7 +1001,9 @@ const DashboardOrders = () => {
                                 type="tel"
                                 id="customerMobile"
                                 value={customerMobile}
-                                onChange={(e) => setCustomerMobile(e.target.value)}
+                                onChange={(e) =>
+                                  setCustomerMobile(e.target.value)
+                                }
                                 placeholder="+91 98765 43210"
                                 className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#cc6600] focus:border-transparent"
                               />
