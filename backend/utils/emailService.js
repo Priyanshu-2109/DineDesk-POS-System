@@ -400,7 +400,8 @@ const generateSubscriptionEmailHTML = (subscriptionData) => {
           <!-- CTA Button -->
           <div style="text-align: center; margin: 30px 0;">
             <a href="${
-              process.env.FRONTEND_URL || "http://localhost:5173"
+              process.env.FRONTEND_URL ||
+              "https://dinedesk-pos-system.vercel.app/"
             }/dashboard" class="cta-button">
               Access Your Dashboard →
             </a>
@@ -652,10 +653,100 @@ const sendPasswordResetOTP = async (email, userName, otp) => {
   return await sendEmail(email, subject, text, html);
 };
 
+/**
+ * Send notification to company when a user signs up for free trial
+ */
+const sendFreeTrialNotification = async (userData) => {
+  const companyEmail = process.env.COMPANY_EMAIL || process.env.EMAIL_USER;
+
+  if (!companyEmail) {
+    console.warn("⚠️ Company email not configured. Skipping notification.");
+    return { success: false, message: "Company email not configured" };
+  }
+
+  const subject = `🎉 New Free Trial Signup - ${userData.name}`;
+  const text = `
+    New Free Trial Signup!
+
+    User Details:
+    - Name: ${userData.name}
+    - Email: ${userData.email}
+    - Signup Date: ${new Date().toLocaleString()}
+    - Subscription: Free Trial
+  `;
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Free Trial Signup</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #cc6600 0%, #b35500 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: #fff; margin: 0; font-size: 28px;">🎉 New Free Trial Signup!</h1>
+      </div>
+      
+      <div style="background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <p style="font-size: 16px; margin-bottom: 20px;">
+          A new user has signed up for the DineDesk free trial.
+        </p>
+        
+        <div style="background-color: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #cc6600;">
+          <h2 style="color: #cc6600; margin-top: 0; font-size: 20px;">User Details</h2>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; font-weight: bold; width: 140px;">Name:</td>
+              <td style="padding: 8px 0;">${userData.name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: bold;">Email:</td>
+              <td style="padding: 8px 0;">
+                <a href="mailto:${
+                  userData.email
+                }" style="color: #cc6600; text-decoration: none;">
+                  ${userData.email}
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: bold;">Signup Date:</td>
+              <td style="padding: 8px 0;">${new Date().toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: bold;">Subscription:</td>
+              <td style="padding: 8px 0;">
+                <span style="background-color: #4CAF50; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 14px;">
+                  Free Trial
+                </span>
+              </td>
+            </tr>
+          </table>
+        </div>
+        
+        <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+          <p style="margin: 0; font-size: 14px; color: #856404;">
+            <strong>Action Required:</strong> Consider reaching out to the user to provide onboarding support and gather feedback.
+          </p>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #888;">
+          <p style="margin: 0;">This is an automated notification from DineDesk POS System</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return await sendEmail(companyEmail, subject, text, html);
+};
+
 module.exports = {
   sendOrderReceipt,
   sendSubscriptionEmail,
   testEmailConfig,
   sendEmail,
   sendPasswordResetOTP,
+  sendFreeTrialNotification,
 };

@@ -4,6 +4,9 @@ import { toast } from "react-hot-toast";
 import axios from "axios";
 
 const ForgotPasswordModal = ({ isOpen, onClose }) => {
+  const API_BASE_URL =
+    import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
   const [step, setStep] = useState(1); // 1: Enter Email, 2: Enter OTP & New Password
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -21,7 +24,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/auth/forgot-password",
+        `${API_BASE_URL}/auth/forgot-password`,
         {
           email,
         }
@@ -56,14 +59,11 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
 
     setLoading(true);
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/reset-password",
-        {
-          email,
-          otp,
-          newPassword,
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/auth/reset-password`, {
+        email,
+        otp,
+        newPassword,
+      });
 
       toast.success(response.data.message || "Password reset successful!");
 
