@@ -1,6 +1,7 @@
 const { validationResult } = require("express-validator");
 const User = require("../models/User");
 const { sendTokenResponse } = require("../utils/auth");
+const { sendFreeTrialNotification } = require("../utils/emailService");
 
 // @desc    Register user
 // @route   POST /api/auth/signup
@@ -34,6 +35,15 @@ const signup = async (req, res) => {
       email: email.toLowerCase(),
       password,
       subscription: null,
+    });
+
+    // Send free trial notification to company email (non-blocking)
+    sendFreeTrialNotification({
+      name: user.name,
+      email: user.email,
+    }).catch((error) => {
+      console.error("Error sending free trial notification:", error);
+      // Don't block user signup if notification fails
     });
 
     // Don't generate token upon signup. Token is generated only on login.
@@ -212,16 +222,14 @@ const setSubscription = async (req, res) => {
       .json({ success: true, message: "Subscription updated", user: updated });
   } catch (error) {
     console.error("Set subscription error:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Server error",
-        error:
-          process.env.NODE_ENV === "development"
-            ? error.message
-            : "Internal server error",
-      });
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
+    });
   }
 };
 
