@@ -12,13 +12,15 @@ import {
   LogOut,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
- 
+import { useAuth } from "../context/AuthContext";
+
 const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useApp();
+  const { user } = useApp();
+  const { logout } = useAuth();
 
   const sidebarItems = [
     { id: "overview", label: "Overview", icon: Home, path: "/dashboard" },

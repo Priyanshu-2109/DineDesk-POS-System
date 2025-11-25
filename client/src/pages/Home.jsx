@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import PaymentModal from "../components/PaymentModal";
 import WelcomeModal from "../components/WelcomeModal";
 import paymentService from "../utils/paymentService";
+import { dinedeskBgPicture } from "../assets/assets";
 import {
   ArrowRight,
   Check,
@@ -64,39 +65,41 @@ const Home = () => {
       interval: "month",
       description: "Perfect for small restaurants and cafes",
       features: [
-        "Up to 10 tables",
-        "Basic reporting",
+        "Up to 5 tables",
+        "Basic menu management",
+        "Order tracking",
         "Email support",
-        "Mobile app access",
       ],
       popular: false,
     },
     {
       id: "professional",
       name: "Professional",
-      price: 2499,
+      price: 1999,
       currency: "INR",
       interval: "month",
       description: "Ideal for growing restaurants",
       features: [
-        "Up to 50 tables",
-        "Advanced analytics",
+        "Up to 20 tables",
+        "Advanced menu management",
+        "Order tracking & analytics",
+        "Customer management",
         "Priority support",
-        "Inventory management",
-        "Multi-location support",
       ],
       popular: true,
     },
     {
       id: "enterprise",
       name: "Enterprise",
-      price: 4999,
+      price: 2999,
       currency: "INR",
       interval: "month",
       description: "For large restaurant chains",
       features: [
         "Unlimited tables",
-        "Custom integrations",
+        "Full restaurant management",
+        "Advanced analytics",
+        "Multi-location support",
         "Dedicated support",
         "White-label options",
         "API access",
@@ -155,8 +158,20 @@ const Home = () => {
   return (
     <div className="min-h-screen w-full">
       {/* Hero Section */}
+      {/* BACKGROUND OPTIONS - Uncomment one of the following: */}
+
+      {/* Option 1: Background Image (Currently Active) */}
+      <section
+        className="min-h-screen flex items-center justify-center px-6 pt-20 bg-cover bg-center bg-no-repeat relative"
+        style={{ backgroundImage: `url(${dinedeskBgPicture})` }}
+      >
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px]"></div>
+
+        {/* Option 2: Gradient Background (Commented Out) 
       <section className="bg-gradient-to-br from-[#ffe8db] to-[#fff4ef] min-h-screen flex items-center justify-center px-6 pt-20">
-        <div className="max-w-4xl mx-auto text-center">
+      */}
+
+        <div className="max-w-4xl mx-auto text-center relative z-10">
           <h1 className="text-6xl md:text-7xl font-bold leading-tight text-[#3b1a0b] mb-8 drop-shadow-sm mt-8">
             Modern POS for <span className="text-[#cc6600]">Restaurants</span>
           </h1>

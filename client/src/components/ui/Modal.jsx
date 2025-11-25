@@ -47,7 +47,9 @@ const Modal = ({
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200/30 sticky top-0 bg-white/90 backdrop-blur-lg z-10">
             {title && (
-              <h2 className="text-lg sm:text-xl font-semibold text-[#3b1a0b]">{title}</h2>
+              <h2 className="text-lg sm:text-xl font-semibold text-[#3b1a0b]">
+                {title}
+              </h2>
             )}
             {showCloseButton && (
               <Button

@@ -93,7 +93,7 @@ export const AppProvider = ({ children }) => {
           _id: table._id,
         }));
         setTables(transformedTables);
-        
+
         // Also fetch orders to sync currentOrderId properly
         if (token) {
           await fetchOrders();
@@ -424,13 +424,16 @@ export const AppProvider = ({ children }) => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/menu/delete-item/${itemId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/menu/delete-item/${itemId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         // Rollback on error
@@ -450,17 +453,17 @@ export const AppProvider = ({ children }) => {
   const createOrder = async (tableId) => {
     try {
       const response = await fetch(`${API_BASE_URL}/orders/create`, {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ tableId }),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Failed to create order');
+        throw new Error(data.message || "Failed to create order");
       }
 
       const data = await response.json();
@@ -472,17 +475,19 @@ export const AppProvider = ({ children }) => {
         createdAt: data.order.createdAt,
         orderNumber: data.order.orderNumber,
       };
-      
+
       setOrders((prev) => [order, ...prev]);
       setTables((prev) =>
         prev.map((t) =>
-          t.id === tableId ? { ...t, status: "occupied", currentOrderId: order.id } : t
+          t.id === tableId
+            ? { ...t, status: "occupied", currentOrderId: order.id }
+            : t
         )
       );
-      
+
       return order.id;
     } catch (error) {
-      console.error('Error creating order:', error);
+      console.error("Error creating order:", error);
       throw error;
     }
   };
@@ -492,17 +497,20 @@ export const AppProvider = ({ children }) => {
     if (!item) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/add-item`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ menuItemId, quantity: 1 }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/orders/${orderId}/add-item`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ menuItemId, quantity: 1 }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to add item to order');
+        throw new Error("Failed to add item to order");
       }
 
       // Update local state optimistically
@@ -525,11 +533,11 @@ export const AppProvider = ({ children }) => {
             : o
         )
       );
-      
+
       // Refresh orders to get updated data from backend
       await fetchOrders();
     } catch (error) {
-      console.error('Error adding item to order:', error);
+      console.error("Error adding item to order:", error);
       throw error;
     }
   };
@@ -552,26 +560,29 @@ export const AppProvider = ({ children }) => {
     const table = tables.find((t) => t.id === tableId);
     if (table && table.currentOrderId) {
       try {
-        const response = await fetch(`${API_BASE_URL}/orders/${table.currentOrderId}/checkout`, {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/orders/${table.currentOrderId}/checkout`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
         if (!response.ok) {
-          throw new Error('Failed to checkout order');
+          throw new Error("Failed to checkout order");
         }
 
         // Update local state
         markOrderComplete(table.currentOrderId);
-        
+
         // Refresh data from backend
         await fetchOrders();
         await fetchTables();
       } catch (error) {
-        console.error('Error during checkout:', error);
+        console.error("Error during checkout:", error);
         throw error;
       }
     }

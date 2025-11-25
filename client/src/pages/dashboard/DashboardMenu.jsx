@@ -84,7 +84,12 @@ const DashboardMenu = () => {
   };
 
   const handleEditItem = async () => {
-    if (!selectedItem || !editItemData.name || !editItemData.category || !editItemData.price) {
+    if (
+      !selectedItem ||
+      !editItemData.name ||
+      !editItemData.category ||
+      !editItemData.price
+    ) {
       return;
     }
 
@@ -108,14 +113,11 @@ const DashboardMenu = () => {
   const handleDeleteItem = async () => {
     if (!selectedItem) return;
 
-    toast.promise(
-      removeMenuItem(selectedItem.id || selectedItem._id),
-      {
-        loading: "Deleting menu item...",
-        success: `${selectedItem.name} deleted successfully`,
-        error: (err) => err.message || "Failed to delete menu item",
-      }
-    );
+    toast.promise(removeMenuItem(selectedItem.id || selectedItem._id), {
+      loading: "Deleting menu item...",
+      success: `${selectedItem.name} deleted successfully`,
+      error: (err) => err.message || "Failed to delete menu item",
+    });
     setSelectedItem(null);
     setShowDeleteModal(false);
   };
@@ -243,14 +245,14 @@ const DashboardMenu = () => {
                     </td>
                     <td className="p-4">
                       <div className="flex gap-2">
-                        <button 
+                        <button
                           onClick={() => openEditModal(item)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors focus:outline-none"
                           title="Edit item"
                         >
                           <Edit3 className="h-4 w-4" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => openDeleteModal(item)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors focus:outline-none"
                           title="Delete item"
@@ -287,10 +289,12 @@ const DashboardMenu = () => {
                     ₹{item.price}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <button
-                    onClick={() => handleToggleAvailability(item.id || item._id)}
+                    onClick={() =>
+                      handleToggleAvailability(item.id || item._id)
+                    }
                     className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                       item.available
                         ? "bg-green-100 text-green-800"
@@ -299,15 +303,15 @@ const DashboardMenu = () => {
                   >
                     {item.available ? "Available" : "Out of Stock"}
                   </button>
-                  
+
                   <div className="flex gap-2">
-                    <button 
+                    <button
                       onClick={() => openEditModal(item)}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                     >
                       <Edit3 className="h-4 w-4" />
                     </button>
-                    <button 
+                    <button
                       onClick={() => openDeleteModal(item)}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
@@ -526,8 +530,8 @@ const DashboardMenu = () => {
           </div>
         </div>
         <Modal.Footer>
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={() => {
               setShowEditModal(false);
               setSelectedItem(null);
@@ -539,7 +543,9 @@ const DashboardMenu = () => {
           <Button
             onClick={handleEditItem}
             disabled={
-              !editItemData.name || !editItemData.category || !editItemData.price
+              !editItemData.name ||
+              !editItemData.category ||
+              !editItemData.price
             }
           >
             Update Item
@@ -559,13 +565,13 @@ const DashboardMenu = () => {
       >
         <div className="space-y-4">
           <p className="text-gray-700">
-            Are you sure you want to delete <strong>{selectedItem?.name}</strong>?
-            This action cannot be undone.
+            Are you sure you want to delete{" "}
+            <strong>{selectedItem?.name}</strong>? This action cannot be undone.
           </p>
         </div>
         <Modal.Footer>
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={() => {
               setShowDeleteModal(false);
               setSelectedItem(null);

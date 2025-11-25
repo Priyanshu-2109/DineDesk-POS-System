@@ -559,9 +559,103 @@ const sendEmail = async (to, subject, text, html, attachments = []) => {
   }
 };
 
+// Send password reset OTP email
+const sendPasswordResetOTP = async (email, userName, otp) => {
+  const subject = "Password Reset OTP - DineDesk";
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Password Reset OTP</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #cc6600 0%, #b35500 100%); color: white; padding: 30px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+        .content { padding: 40px 30px; }
+        .otp-box { background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%); border: 2px solid #cc6600; border-radius: 10px; padding: 30px; text-align: center; margin: 30px 0; }
+        .otp-code { font-size: 36px; font-weight: bold; color: #cc6600; letter-spacing: 8px; margin: 10px 0; }
+        .warning { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px; }
+        .button { display: inline-block; background: linear-gradient(135deg, #cc6600 0%, #b35500 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: 600; margin: 10px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🔐 Password Reset Request</h1>
+        </div>
+        
+        <div class="content">
+          <h2 style="color: #333; margin-bottom: 20px;">Hello ${userName},</h2>
+          
+          <p style="color: #555; font-size: 16px; line-height: 1.6;">
+            We received a request to reset your password for your DineDesk account. 
+            Use the OTP below to reset your password:
+          </p>
+          
+          <div class="otp-box">
+            <p style="margin: 0; color: #666; font-size: 14px;">Your One-Time Password</p>
+            <div class="otp-code">${otp}</div>
+            <p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">Valid for 10 minutes</p>
+          </div>
+          
+          <div class="warning">
+            <strong>⚠️ Security Notice:</strong>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+              <li>This OTP will expire in 10 minutes</li>
+              <li>Never share your OTP with anyone</li>
+              <li>DineDesk staff will never ask for your OTP</li>
+              <li>If you didn't request this, please ignore this email</li>
+            </ul>
+          </div>
+          
+          <p style="color: #555; font-size: 16px; line-height: 1.6; margin-top: 20px;">
+            If you didn't request a password reset, please ignore this email or contact our support team if you have concerns.
+          </p>
+        </div>
+        
+        <div class="footer">
+          <p style="margin: 0 0 10px 0;">
+            <strong>DineDesk - Restaurant Management System</strong>
+          </p>
+          <p style="margin: 5px 0; font-size: 12px;">
+            This is an automated email. Please do not reply to this message.
+          </p>
+          <p style="margin: 5px 0; font-size: 12px; color: #999;">
+            © ${new Date().getFullYear()} DineDesk. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+    Hello ${userName},
+    
+    We received a request to reset your password for your DineDesk account.
+    
+    Your OTP: ${otp}
+    
+    This OTP will expire in 10 minutes.
+    
+    If you didn't request this, please ignore this email.
+    
+    Best regards,
+    DineDesk Team
+  `;
+
+  return await sendEmail(email, subject, text, html);
+};
+
 module.exports = {
   sendOrderReceipt,
   sendSubscriptionEmail,
   testEmailConfig,
   sendEmail,
+  sendPasswordResetOTP,
 };
